@@ -25,8 +25,8 @@ class TestingConfig(Config):
 
 config = {
     'development': DevelopmentConfig,
-    'Production': ProductionConfig,
+    'production': ProductionConfig,
     'testing': TestingConfig,
 
-    'Default': DevelopmentConfig
+    'default': DevelopmentConfig
 }
