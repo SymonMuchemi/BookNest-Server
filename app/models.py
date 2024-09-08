@@ -1,6 +1,7 @@
 from . import db
 from datetime import datetime
 
+
 class Book(db.Model):
     __tablename__ = 'books'
     id = db.Column(db.Integer, primary_key=True)
