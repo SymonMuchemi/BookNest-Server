@@ -96,3 +96,25 @@ def update_member(member_id):
             'Error': 'Cannot update member',
             'Details': e.errors()
         })
+
+
+@members_bp.route('/get_by_id/<int:member_id>')
+def get_member_by_id(member_id):
+    """Get member object using id.
+
+    Args:
+        member_id (int): The id of the member.
+
+    Returns:
+        dict: Response dictionary
+    """
+    member = Member.query.get(member_id)
+    
+    if member is None:
+        return members_error_dict, 400
+    
+    return jsonify({
+        'id': member.id,
+        'name': member.name,
+        'debt': member.debt
+    }), 200
