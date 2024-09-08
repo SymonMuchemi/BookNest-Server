@@ -7,4 +7,3 @@ class BookSchema(BaseModel):
     image_url: str = Field(..., min_length=10)
     count: int = Field(gt=0)
     rental_fee: int = Field(gt=10)
-   
