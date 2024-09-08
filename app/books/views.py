@@ -32,9 +32,9 @@ def create_book():
     """
     try:
         book_data = request.json
-        
+
         book_schema = BookSchema(**book_data)
-        
+
         book = Book(
             name=book_schema.name.lower(),
             author=book_schema.author.lower(),
@@ -45,12 +45,12 @@ def create_book():
         # add book data to database
         db.session.add(book)
         db.session.commit()
-        
+
         return jsonify({
             'message': 'Book created succesfully',
             'book': book_schema.model_dump()
         }), 201
-        
+
     except ValidationError as e:
         return jsonify({
             'error': 'Validation failed',
@@ -61,6 +61,7 @@ def create_book():
         return jsonify({
             'Error': 'Name already exists'
         }), 400
+
 
 @books_bp.route('/get_by_name/<string:name>', methods=['GET'])
 def get_by_name(name):
@@ -73,9 +74,9 @@ def get_by_name(name):
         list: a list of all books with the given name.
     """
     query_name = name.lower().replace('_', ' ')
-    
+
     books = Book.query.filter_by(name=query_name).all()
-    
+
     if len(books) > 0:
         return jsonify([{
             'id': book.id,
@@ -85,7 +86,7 @@ def get_by_name(name):
             'quantity': book.quantity,
             'rental_fee': book.rental_fee
         } for book in books])
-    
+
     return book_error_dict, 400
 
 
@@ -100,9 +101,9 @@ def get_by_author(name):
         list: List of books.
     """
     query_author = name.lower().replace('_', ' ')
-    
+
     books = Book.query.filter_by(author=query_author).all()
-    
+
     if len(books) > 0:
         return jsonify([{
             'id': book.id,
@@ -112,7 +113,7 @@ def get_by_author(name):
             'quantity': book.quantity,
             'rental_fee': book.rental_fee
         } for book in books])
-    
+
     return book_error_dict, 400
 
 
@@ -127,23 +128,23 @@ def update_book(book_id):
         dict: Response message.
     """
     book_data = request.json
-    
+
     book = Book.query.get(book_id)
 
     if book is None:
         return book_error_dict, 400
-    
+
     try:
         book_schema = BookSchema(**book_data)
-        
+
         book.name = book_schema.name
         book.author = book_schema.author
         book.image_url = book_schema.image_url
         book.quantity = book_schema.quantity
         book.rental_fee = book_schema.rental_fee
-        
+
         db.session.commit()
-        
+
         return jsonify({
             "Message": "Book update successfully",
             "New book": book_schema.model_dump()
@@ -159,13 +160,13 @@ def update_book(book_id):
 @books_bp.route('/delete/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     book_to_delete = Book.query.get(book_id)
-    
+
     if book_to_delete is None:
         return book_error_dict, 400
-    
+
     db.session.delete(book_to_delete)
     db.session.commit()
-    
+
     return jsonify({
         "Message": "Deletion successfull!"
     }), 200
@@ -175,11 +176,11 @@ def delete_book(book_id):
 def get_books():
     page = request.args.get('page', default=1, type=int)
     per_page = request.args.get('per_page', default=10, type=int)
-    
+
     books = Book.query.paginate(page=page, per_page=per_page)
-    
+
     total_pages = ceil(books.total / per_page)
-    
+
     books_list = [{
         'id': book.id,
         'name': book.name,
@@ -188,7 +189,7 @@ def get_books():
         'quantity': book.quantity,
         'rental_fee': book.rental_fee
     } for book in books]
-    
+
     return jsonify({
         'total_books': books.total,
         'total_pages': total_pages,
