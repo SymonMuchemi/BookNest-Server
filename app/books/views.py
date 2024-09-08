@@ -4,6 +4,7 @@ from ..models import Book
 from ..schema import BookSchema
 from app import db
 from app.books import books_bp
+from math import ceil
 
 book_error_dict = {
     'Error': 'Could not find book'
@@ -161,4 +162,36 @@ def delete_book(book_id):
     
     return jsonify({
         "Message": "Deletion successfull!"
+    }), 200
+
+
+@books_bp.route('/get_books', methods=['GET'])
+def get_books():
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=10, type=int)
+    
+    books = Book.query.paginate(page=page, per_page=per_page)
+    
+    total_pages = ceil(books.total / per_page)
+    
+    books_list = [{
+        'id': book.id,
+        'name': book.name,
+        'author': book.author,
+        'image_url': book.image_url,
+        'quantity': book.quantity,
+        'rental_fee': book.rental_fee
+    } for book in books]
+    
+    return jsonify({
+        'total_books': books.total,
+        'total_pages': total_pages,
+        'pages': books.pages,
+        'current_page': page,
+        'books': books_list,
+        'per_page': per_page,
+        'has_next': books.has_next,
+        'has_prev': books.has_prev,
+        'next_page': books.next_num if books.has_next else None,
+        'prev_page': books.prev_num if books.has_prev else None
     }), 200
