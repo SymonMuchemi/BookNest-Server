@@ -31,6 +31,6 @@ def create_app(key='default'):
 
     from .books import books_bp
 
-    app.register_blueprint(books_bp, url_prefix='/api')
+    app.register_blueprint(books_bp, url_prefix='/api/book')
 
     return app
