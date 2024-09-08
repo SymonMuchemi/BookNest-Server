@@ -152,3 +152,26 @@ def get_members():
         'next_page': members.next_num if members.has_next else None,
         'prev_page': members.prev_num if members.has_prev else None
     }), 200
+
+
+@members_bp.route('/delete/<int:member_id>', methods=['DELETE'])
+def delete_member(member_id):
+    """Deletes a member from the database.
+
+    Args:
+        member_id (int): The Id of the member.
+
+    Returns:
+        dict: Response dictionary
+    """
+    member = Member.query.get(member_id)
+    
+    if member is None:
+        return members_error_dict, 400
+    
+    db.session.delete(member)
+    db.session.commit()
+    
+    return jsonify({
+        'Message': 'Member deleted succesfully!'
+    }), 200
