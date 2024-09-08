@@ -61,11 +61,6 @@ def get_by_name(name):
     Returns:
         list: a list of all books with the given name.
     """
-    if name is None:
-        return jsonify({
-            "Error": "Name cannot be empty"
-        }), 400
-    
     query_name = name.lower().replace('_', ' ')
     
     books = Book.query.filter_by(name=query_name).all()
@@ -84,3 +79,24 @@ def get_by_name(name):
         return jsonify({
             'Error': 'Could not find book'
         }), 400
+
+
+@books_bp.route('/get_by_author/<string:name>')
+def get_by_author(name):
+    query_author = name.lower().replace('_', ' ')
+    
+    books = Book.query.filter_by(author=query_author).all()
+    
+    if len(books) > 0:
+        return jsonify([{
+            'id': book.id,
+            'name': book.name,
+            'author': book.author,
+            'image_url': book.image_url,
+            'count': book.count,
+            'rental_fee': book.rental_fee
+        } for book in books])
+    
+    return jsonify({
+        'Error': 'Could not find book'
+    }), 400
