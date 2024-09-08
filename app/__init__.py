@@ -26,11 +26,11 @@ def create_app(key='default'):
     app.config.from_object(config[key])
 
     db.init_app(app)
-    migrate.init_app(app)
+    migrate.init_app(app, db)
     cors.init_app(app)
 
     from .books import books_bp
 
-    app.register_blueprint(books_bp, url_prefix='/api')
+    app.register_blueprint(books_bp, url_prefix='/api/book')
 
     return app
