@@ -118,3 +118,37 @@ def get_member_by_id(member_id):
         'name': member.name,
         'debt': member.debt
     }), 200
+
+
+@members_bp.route('/get_members')
+def get_members():
+    """Gets members in pages.
+
+    Returns:
+        dict: Pagination object with data as list.
+    """
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=10, type=int)
+
+    members = Member.query.paginate(page=page, per_page=per_page)
+    
+    total_pages = ceil(members.total / per_page)
+    
+    members_list = [{
+        'id': member.id,
+        'name': member.name,
+        'debt': member.debt
+    } for member in members]
+
+    return jsonify({
+        'total_members': members.total,
+        'total_pages': total_pages,
+        'pages': members.pages,
+        'current_page': page,
+        'members': members_list,
+        'per_page': per_page,
+        'has_next': members.has_next,
+        'has_prev': members.has_prev,
+        'next_page': members.next_num if members.has_next else None,
+        'prev_page': members.prev_num if members.has_prev else None
+    }), 200
