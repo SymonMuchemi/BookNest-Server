@@ -111,6 +111,14 @@ def get_by_author(name):
 
 @books_bp.route('/update/<int:book_id>', methods=['PUT'])
 def update_book(book_id):
+    """Updates the details of a book object.
+
+    Args:
+        book_id (int): The book's id.
+
+    Returns:
+        dict: Response message.
+    """
     book_data = request.json
     
     book = Book.query.get(book_id)
@@ -139,3 +147,18 @@ def update_book(book_id):
             'Error': 'Cannot update book',
             'Details': e.errors()
         }), 400
+
+
+@books_bp.route('/delete/<int:book_id>', methods=['DELETE'])
+def delete_book(book_id):
+    book_to_delete = Book.query.get(book_id)
+    
+    if book_to_delete is None:
+        return book_error_dict, 400
+    
+    db.session.delete(book_to_delete)
+    db.session.commit()
+    
+    return jsonify({
+        "Message": "Deletion successfull!"
+    }), 200
