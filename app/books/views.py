@@ -16,7 +16,7 @@ def hello_world():
     return 'Hello world'
 
 
-@books_bp.route('/create_book', methods=['POST'])
+@books_bp.route('/create', methods=['POST'])
 def create_book():
     """creates a book instance and stores to database.
 
@@ -29,8 +29,8 @@ def create_book():
         book_schema = BookSchema(**book_data)
         
         book = Book(
-            name=book_schema.name,
-            author=book_schema.author,
+            name=book_schema.name.lower(),
+            author=book_schema.author.lower(),
             count=book_schema.count,
             image_url=book_schema.image_url,
             rental_fee=book_schema.rental_fee
@@ -48,4 +48,39 @@ def create_book():
         return jsonify({
             'error': 'Validation failed',
             'details': e.errors()
+        }), 400
+
+
+@books_bp.route('/get_by_name/<string:name>', methods=['GET'])
+def get_by_name(name):
+    """Gets books with a given name.
+
+    Args:
+        name (str): The name of the book.
+
+    Returns:
+        list: a list of all books with the given name.
+    """
+    if name is None:
+        return jsonify({
+            "Error": "Name cannot be empty"
+        }), 400
+    
+    query_name = name.lower().replace('_', ' ')
+    
+    books = Book.query.filter_by(name=query_name).all()
+    
+    if len(books) > 0:
+        return jsonify([{
+            'id': book.id,
+            'name': book.name,
+            'author': book.author,
+            'image_url': book.image_url,
+            'count': book.count,
+            'rental_fee': book.rental_fee
+        } for book in books])
+    
+    else:
+        return jsonify({
+            'Error': 'Could not find book'
         }), 400
