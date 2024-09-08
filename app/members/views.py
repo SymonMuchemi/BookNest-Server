@@ -32,9 +32,9 @@ def create_member():
     """
     try:
         member = request.json
-        
+
         member_schema = MemberSchema(**member)
-        
+
         member = Member(
             name = member_schema.name,
             debt = member_schema.debt
@@ -42,18 +42,18 @@ def create_member():
 
         db.session.add(member)
         db.session.commit()
-        
+
         return jsonify({
             'Message': 'Member created succesfully',
             'Member': member_schema.model_dump()
         }), 201
-        
+
     except ValidationError as e:
         return jsonify({
             'Error': 'Validation failed',
             'Details': e.errors()
         }), 400
-    
+
     except IntegrityError as e:
         return jsonify({
             'Error': 'Name already exists',
@@ -73,23 +73,23 @@ def update_member(member_id):
     member_data = request.json
 
     member = Member.query.get(member_id)
-    
+
     if member is None:
         return members_error_dict, 400
-    
+
     try:
         member_schema = MemberSchema(**member_data)
-        
+
         member.name = member_schema.name
         member.debt = member_schema.debt
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'Message': "Member updated successfully!",
             'New member': member_schema.model_dump()
         })
-        
+
 
     except ValidationError as e:
         return jsonify({
@@ -109,10 +109,10 @@ def get_member_by_id(member_id):
         dict: Response dictionary
     """
     member = Member.query.get(member_id)
-    
+
     if member is None:
         return members_error_dict, 400
-    
+
     return jsonify({
         'id': member.id,
         'name': member.name,
@@ -131,9 +131,9 @@ def get_members():
     per_page = request.args.get('per_page', default=10, type=int)
 
     members = Member.query.paginate(page=page, per_page=per_page)
-    
+
     total_pages = ceil(members.total / per_page)
-    
+
     members_list = [{
         'id': member.id,
         'name': member.name,
@@ -165,13 +165,13 @@ def delete_member(member_id):
         dict: Response dictionary
     """
     member = Member.query.get(member_id)
-    
+
     if member is None:
         return members_error_dict, 400
-    
+
     db.session.delete(member)
     db.session.commit()
-    
+
     return jsonify({
         'Message': 'Member deleted succesfully!'
     }), 200
