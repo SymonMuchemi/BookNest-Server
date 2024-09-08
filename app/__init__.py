@@ -10,6 +10,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 cors = CORS()
 
+
 def create_app(key='default'):
     """Create and configures the Flask application.
 
@@ -27,9 +28,9 @@ def create_app(key='default'):
     db.init_app(app)
     migrate.init_app(app)
     cors.init_app(app)
-    
+
     from .books import books_bp
-    
+
     app.register_blueprint(books_bp, url_prefix='/api')
 
     return app
