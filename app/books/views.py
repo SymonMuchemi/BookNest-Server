@@ -1,10 +1,12 @@
-from flask import request, jsonify
-from pydantic import ValidationError
-from ..models import Book
-from ..schema import BookSchema
 from app import db
 from app.books import books_bp
+from flask import request, jsonify
+from ..schema import BookSchema
+from ..models import Book
+
 from math import ceil
+from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 book_error_dict = {
     'Error': 'Could not find book'
@@ -47,7 +49,7 @@ def create_book():
         return jsonify({
             'message': 'Book created succesfully',
             'book': book_schema.model_dump()
-        })
+        }), 201
         
     except ValidationError as e:
         return jsonify({
@@ -55,6 +57,10 @@ def create_book():
             'details': e.errors()
         }), 400
 
+    except IntegrityError as e:
+        return jsonify({
+            'Error': 'Name already exists'
+        }), 400
 
 @books_bp.route('/get_by_name/<string:name>', methods=['GET'])
 def get_by_name(name):
