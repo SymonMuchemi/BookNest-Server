@@ -1,8 +1,8 @@
 from flask import jsonify
-from app.books import books_bp
+from app.transactions import transactions_bp
 
 
-@books_bp.app_errorhandler(404)
+@transactions_bp.app_errorhandler(404)
 def bad_request(e):
     """Handle request not found errors.
 
@@ -17,7 +17,7 @@ def bad_request(e):
     }), 404
 
 
-@books_bp.app_errorhandler(500)
+@transactions_bp.app_errorhandler(500)
 def bad_request(e):
     """Handle request not found errors.
 
