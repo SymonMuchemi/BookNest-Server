@@ -8,15 +8,15 @@ class Book(db.Model):
     name = db.Column(db.String(255), unique=True)
     author = db.Column(db.String(50))
     image_url = db.Column(db.Text)
-    quantity = db.Column(db.Integer, default=0)
-    rental_fee = db.Column(db.Integer, default=100)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+    penalty_fee = db.Column(db.Integer, default=10)
     transactions = db.relationship('Transaction', backref='book')
 
 
 class Member(db.Model):
     __tablename__ = 'members'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), unique=True)
+    name = db.Column(db.String(255))
     debt = db.Column(db.Integer, default=0)
     transactions = db.relationship('Transaction', backref='member')
 
