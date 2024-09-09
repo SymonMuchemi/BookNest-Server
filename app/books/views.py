@@ -159,6 +159,14 @@ def update_book(book_id):
 
 @books_bp.route('/delete/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
+    """Deletes a book.
+
+    Args:
+        book_id (int): Id of book to delete.
+
+    Returns:
+        dict: Response message.
+    """
     book_to_delete = Book.query.get(book_id)
 
     if book_to_delete is None:
@@ -174,6 +182,11 @@ def delete_book(book_id):
 
 @books_bp.route('/get_books', methods=['GET'])
 def get_books():
+    """Gets book objects in pages.
+
+    Returns:
+        dict: Pagination object with book data as list.
+    """
     page = request.args.get('page', default=1, type=int)
     per_page = request.args.get('per_page', default=10, type=int)
 
