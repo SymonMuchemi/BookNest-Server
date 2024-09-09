@@ -31,8 +31,10 @@ def create_app(key='default'):
 
     from .books import books_bp
     from .members import members_bp
+    from .transactions import transactions_bp
 
     app.register_blueprint(books_bp, url_prefix='/api/books')
     app.register_blueprint(members_bp, url_prefix='/api/members')
+    app.register_blueprint(transactions_bp, url_prefix='/api/transactions')
 
     return app
