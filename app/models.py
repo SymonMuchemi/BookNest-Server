@@ -24,9 +24,10 @@ class Member(db.Model):
 class Transaction(db.Model):
     __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('books.id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     member_id = db.Column(db.Integer, db.ForeignKey('members.id'))
-    transaction_type = db.Column(db.Enum('return', 'issue',
+    type = db.Column(db.Enum('return', 'issue',
                                          name='transaction_types'),
                                  nullable=False)
-    date_of_transaction = db.Column(db.DateTime, default=datetime.now())
+    amount = db.Column(db.Integer, default=0)
+    date = db.Column(db.DateTime, default=datetime.now())
