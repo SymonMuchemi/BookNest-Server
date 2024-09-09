@@ -14,6 +14,7 @@ class BookSchema(BaseModel):
 class MemberSchema(BaseModel):
     name: str = Field(..., min_length=3, max_length=255)
     debt: int = Field(..., ge=0, lt=500)
+    books_borrowed: int = Field(ge=0, default=0)
 
 
 class TransactionSchema(BaseModel):

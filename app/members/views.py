@@ -37,7 +37,8 @@ def create_member():
 
         member = Member(
             name = member_schema.name,
-            debt = member_schema.debt
+            debt = member_schema.debt,
+            books_borrowed = member_schema.books_borrowed
         )
 
         db.session.add(member)
@@ -82,6 +83,7 @@ def update_member(member_id):
 
         member.name = member_schema.name
         member.debt = member_schema.debt
+        member.books_borrowed =  member_schema.books_borrowed
 
         db.session.commit()
 
@@ -116,7 +118,8 @@ def get_member_by_id(member_id):
     return jsonify({
         'id': member.id,
         'name': member.name,
-        'debt': member.debt
+        'debt': member.debt,
+        'books_borrowed':member.books_borrowed
     }), 200
 
 
