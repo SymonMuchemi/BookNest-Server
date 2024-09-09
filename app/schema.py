@@ -1,3 +1,5 @@
+from datetime import datetime
+from .utils import TransactionType
 from pydantic import BaseModel, Field
 
 
@@ -12,3 +14,14 @@ class BookSchema(BaseModel):
 class MemberSchema(BaseModel):
     name: str = Field(..., min_length=3, max_length=255)
     debt: int = Field(..., ge=0, lt=500)
+
+
+
+
+
+class TransactionSchema(BaseModel):
+    book_id: int = Field(..., ge=1)
+    member_id: int = Field(..., gt=0)
+    type: TransactionType = Field(...)
+    amount: int = Field(default=0)
+    date: datetime = Field(default_factory=datetime.now)
