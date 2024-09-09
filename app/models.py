@@ -10,6 +10,7 @@ class Book(db.Model):
     image_url = db.Column(db.Text)
     quantity = db.Column(db.Integer, default=1, nullable=False)
     penalty_fee = db.Column(db.Integer, default=10)
+    
     transactions = db.relationship('Transaction', backref='book')
 
 
@@ -18,6 +19,8 @@ class Member(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     debt = db.Column(db.Integer, default=0)
+    books_borrowed = db.Column(db.Integer, default=0)
+    
     transactions = db.relationship('Transaction', backref='member')
 
 
