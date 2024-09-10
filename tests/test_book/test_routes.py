@@ -211,3 +211,35 @@ class TestBookRoutes(TestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json), 1)
+
+    def test_update(self):
+        """Check if update routes updates book."""
+        book = Book(
+            name='Test Book',
+            author='John Doe',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+        
+        db.session.add(book)
+        db.session.commit()
+        
+        update_data = {
+            'name': 'Updated Book',
+            'author': 'Jane Doe',
+            'image_url': 'https://newurl.com/image.jpg',
+            'quantity': 10,
+            'penalty_fee': 15
+        }
+        
+        retrieved_book = Book.query.filter_by(name='Test Book').first()
+        
+        response = self.client.put(f'/api/books/update/{retrieved_book.id}',json=update_data)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Book updated successfully', response.json['Message'])
+        self.assertEqual('Jane Doe', response.json['New book']['author'])
+        self.assertEqual(10, response.json['New book']['quantity'])
+        self.assertEqual(15, response.json['New book']['penalty_fee'])
+        self.assertEqual('https://newurl.com/image.jpg', response.json['New book']['image_url'])
