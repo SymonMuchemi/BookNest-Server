@@ -6,6 +6,10 @@ from ..utils import TransactionType
 from ..schema import TransactionSchema
 from ..models import Transaction, Member, Book
 
+member_error_dict = {
+                'Error': 'Cannot get member!'
+            }
+
 
 @transactions_bp.route('/hello', methods=['GET'])
 def hello_world():
@@ -69,6 +73,56 @@ def create_transaction():
             'transaction': transaction_schema.model_dump(),
         }), 201
 
+    except ValidationError as e:
+        return jsonify({
+            'error': 'Validation failed',
+            'details': e.errors()
+        }), 400
+
+
+@transactions_bp.route('/issue_book', methods=['GET', 'POST'])
+def issue_book():
+    """Issues a book to a member if the member is allowed to.
+
+    Returns:
+        dict: Dictionary response message.
+    """
+    data = request.json
+    
+    try:
+        transaction_schema = TransactionSchema(**data)
+
+        member_id = transaction_schema.member_id        
+        member = Member.query.get(member_id)
+        
+        if member is None:
+            return member_error_dict, 400
+        
+        if member.books_borrowed >= 3:
+            return jsonify({
+                'Error': 'Member cannot borrow more than 3 books!'
+            }), 400
+        
+        # add a book to the member object
+        member.books_borrowed += 1
+        
+        transaction = Transaction(
+            book_id = transaction_schema.book_id,
+            member_id = transaction_schema.member_id,
+            type = TransactionType.ISSUE,
+            amount = 0
+        )
+        
+        db.session.add(member)
+        db.session.add(transaction)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'Message': 'Book issue recorded successfully',
+            'Transaction': transaction_schema.model_dump()
+        })
+        
     except ValidationError as e:
         return jsonify({
             'error': 'Validation failed',
