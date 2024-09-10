@@ -88,7 +88,6 @@ def issue_book():
     Returns:
         dict: Dictionary response message.
     """
-    # TODO: Prevent user from being issued the same book
     data = request.json
     
     try:
