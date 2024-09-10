@@ -5,13 +5,11 @@ from datetime import datetime
 class Book(db.Model):
     __tablename__ = 'books'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), unique=True)
+    name = db.Column(db.String(255))
     author = db.Column(db.String(50))
     image_url = db.Column(db.Text)
-    quantity = db.Column(db.Integer, default=0)
-    penalty_fee = db.Column(db.Integer, default=100)
-    quantity = db.Column(db.Integer, default=1, nullable=False)
     penalty_fee = db.Column(db.Integer, default=10)
+    quantity = db.Column(db.Integer, nullable=False)
     
     transactions = db.relationship('Transaction', backref='book')
 
