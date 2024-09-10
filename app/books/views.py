@@ -58,8 +58,8 @@ def create_book():
         }), 400
 
 
-@books_bp.route('/get_by_name/<string:name>', methods=['GET'])
-def get_by_name(name):
+@books_bp.route('/get_by_name/<string:string>', methods=['GET'])
+def get_by_name(string):
     """Gets books with a given name.
 
     Args:
@@ -68,9 +68,9 @@ def get_by_name(name):
     Returns:
         list: a list of all books with the given name.
     """
-    query_name = name.lower().replace('_', ' ')
+    query_name = string.lower().replace('_', ' ')
 
-    books = Book.query.filter_by(name=query_name).all()
+    books = Book.query.filter(Book.name.like(f"%{query_name}%")).all()
 
     if len(books) > 0:
         return jsonify([{
@@ -163,7 +163,7 @@ def delete_book(book_id):
         dict: Response message.
     """
     try:
-        book_to_delete = Book.query.get(book_id)
+        book_to_delete = db.session.get(Book, book_id)
 
         if book_to_delete is None:
             return book_error_dict, 400
