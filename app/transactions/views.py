@@ -1,9 +1,10 @@
 from app import db
 from app.transactions import transactions_bp
+from datetime import datetime
 from flask import jsonify, request
 from pydantic import ValidationError
-from ..utils import TransactionType
-from ..schema import TransactionSchema
+from ..utils import TransactionType, ALLOWED_BORROW_PERIOD
+from ..schema import TransactionSchema, BookRequestSchema
 from ..models import Transaction, Member, Book
 
 member_error_dict = {
@@ -87,13 +88,17 @@ def issue_book():
     Returns:
         dict: Dictionary response message.
     """
+    # TODO: Prevent user from being issued the same book
     data = request.json
     
     try:
-        transaction_schema = TransactionSchema(**data)
+        return_schema = BookRequestSchema(**data)
 
-        member_id = transaction_schema.member_id        
+        member_id = return_schema.member_id    
+        book_id = return_schema.book_id
+            
         member = Member.query.get(member_id)
+        book = Book.query.get(book_id)
         
         if member is None:
             return member_error_dict, 400
@@ -102,29 +107,126 @@ def issue_book():
             return jsonify({
                 'Error': 'Member cannot borrow more than 3 books!'
             }), 400
+            
+        if book.quantity == 0:
+            return jsonify({
+                'Error': 'Book not available'
+            }), 400
         
         # add a book to the member object
         member.books_borrowed += 1
+        book.quantity -= 1
         
         transaction = Transaction(
-            book_id = transaction_schema.book_id,
-            member_id = transaction_schema.member_id,
+            book_id = return_schema.book_id,
+            member_id = return_schema.member_id,
             type = TransactionType.ISSUE,
-            amount = 0
         )
         
         db.session.add(member)
+        db.session.add(book)
         db.session.add(transaction)
         
         db.session.commit()
         
         return jsonify({
             'Message': 'Book issue recorded successfully',
-            'Transaction': transaction_schema.model_dump()
+            'Transaction': return_schema.model_dump()
         })
         
     except ValidationError as e:
         return jsonify({
             'error': 'Validation failed',
             'details': e.errors()
+        }), 400
+
+
+@transactions_bp.route('/retrieve_book', methods=['POST', 'GET', 'PUT'])
+def retrieve_book():
+    """Takes record of book returned.
+
+    Returns:
+        dict: Dictionary response message.
+    """
+    data = request.json
+    
+    try:
+        request_schema = BookRequestSchema(**data)
+        
+        book_id = request_schema.book_id
+        member_id = request_schema.member_id
+        
+        book_record = Transaction.query.filter_by(
+            book_id=book_id,
+            member_id=member_id,
+            type=TransactionType.ISSUE
+            ).first()
+        
+        if book_record is None:
+            return jsonify({
+                "Error": 'Cannot retrieve book record.'
+            }), 400
+                
+        member = Member.query.get(member_id)
+        book = Book.query.get(book_id)
+        
+        if member is None:
+            return jsonify({
+                'Error': 'Cannot get member details from database!'
+            })
+
+        if member.debt > 0:
+            return jsonify({
+                'Error': 'Member must pay pending penalties!'
+            }), 400
+
+        if book is None:
+            return ({
+                'Error': 'Connot retrieve book data from the database.'
+            }), 400
+            
+        date_of_issue = book_record.date
+        
+        # calculate charges
+        difference = date_of_issue - datetime.now()
+        extra_time = difference.days - ALLOWED_BORROW_PERIOD
+        penalty_amount = extra_time * book.penalty_fee
+        
+        if penalty_amount + member.debt > 500:
+            member.debt = 500
+        else:
+            member.debt += penalty_amount
+        
+        book.quantity += 1
+        member.books_borrowed -= 1
+        
+        transaction = Transaction(
+                book_id = book_id,
+                member_id = member_id,
+                type = TransactionType.RETURN,
+                amount = 0
+            )
+        
+        db.session.merge(book)
+        db.session.merge(member)
+        
+        db.session.add(transaction)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'Message': 'Recorded return transaction successfully',
+            'Transaction': request_schema.model_dump()
+        })
+        
+    except ValidationError as e:
+        return jsonify({
+            'error': 'Validation failed',
+            'details': e.errors()
+        }), 400
+
+    except Exception as e:
+        return jsonify({
+            'Message': 'Cannot complete transaction',
+            'Error': str(e)
         }), 400
