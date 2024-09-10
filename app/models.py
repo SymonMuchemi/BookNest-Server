@@ -8,6 +8,8 @@ class Book(db.Model):
     name = db.Column(db.String(255), unique=True)
     author = db.Column(db.String(50))
     image_url = db.Column(db.Text)
+    quantity = db.Column(db.Integer, default=0)
+    penalty_fee = db.Column(db.Integer, default=100)
     quantity = db.Column(db.Integer, default=1, nullable=False)
     penalty_fee = db.Column(db.Integer, default=10)
     
