@@ -137,3 +137,77 @@ class TestBookRoutes(TestCase):
         self.assertEqual(False, response.json['has_prev'])
         self.assertEqual(2, response.json['next_page'])
         self.assertEqual(None, response.json['prev_page'])
+
+    def test_get_by_name(self):
+        """Check get_by_name endpoint return appropriate book data."""
+        book1 = Book(
+            name='Test Book',
+            author='John Doe',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+        
+        book2 = Book(
+            name='Another book',
+            author='John Doe',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+
+        book3 = Book(
+            name='The Last Book',
+            author='Mitchelle White',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+
+        db.session.add(book1)
+        db.session.add(book2)
+        db.session.add(book3)
+        
+        db.session.commit()
+        
+        response = self.client.get('/api/books/get_by_name/book')
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 3)
+
+    def test_get_by_author(self):
+        """Check if get_by_author endpoint returns appropriate data."""
+        book1 = Book(
+            name='Test Book',
+            author='John Doe',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+        
+        book2 = Book(
+            name='Another book',
+            author='John Doe',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+
+        book3 = Book(
+            name='The Last Book',
+            author='Mitchelle White',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+
+        db.session.add(book1)
+        db.session.add(book2)
+        db.session.add(book3)
+        
+        db.session.commit()
+        
+        response = self.client.get('/api/books/get_by_author/white')
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 1)
