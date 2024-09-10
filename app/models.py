@@ -9,7 +9,7 @@ class Book(db.Model):
     author = db.Column(db.String(50))
     image_url = db.Column(db.Text)
     quantity = db.Column(db.Integer, default=0)
-    rental_fee = db.Column(db.Integer, default=100)
+    penalty_fee = db.Column(db.Integer, default=100)
     transactions = db.relationship('Transaction', backref='book')
 
 
