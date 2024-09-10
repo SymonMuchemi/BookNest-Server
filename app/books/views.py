@@ -80,7 +80,7 @@ def get_by_name(string):
             'image_url': book.image_url,
             'quantity': book.quantity,
             'penalty_fee': book.penalty_fee
-        } for book in books])
+        } for book in books]), 200
 
     return book_error_dict, 400
 
@@ -124,7 +124,8 @@ def update_book(book_id):
     """
     book_data = request.json
 
-    book = Book.query.get(book_id)
+    # book = Book.query.get(book_id)
+    book = db.session.get(Book, book_id)
 
     if book is None:
         return book_error_dict, 400
@@ -141,9 +142,9 @@ def update_book(book_id):
         db.session.commit()
 
         return jsonify({
-            "Message": "Book update successfully",
+            "Message": "Book updated successfully",
             "New book": book_schema.model_dump()
-        })
+        }), 200
 
     except ValidationError as e:
         return jsonify({
