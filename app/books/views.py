@@ -40,7 +40,7 @@ def create_book():
             author=book_schema.author.lower(),
             quantity=book_schema.quantity,
             image_url=book_schema.image_url,
-            rental_fee=book_schema.rental_fee
+            penalty_fee=book_schema.penalty_fee
         )
         # add book data to database
         db.session.add(book)
@@ -84,7 +84,7 @@ def get_by_name(name):
             'author': book.author,
             'image_url': book.image_url,
             'quantity': book.quantity,
-            'rental_fee': book.rental_fee
+            'penalty_fee': book.penalty_fee
         } for book in books])
 
     return book_error_dict, 400
@@ -111,7 +111,7 @@ def get_by_author(name):
             'author': book.author,
             'image_url': book.image_url,
             'quantity': book.quantity,
-            'rental_fee': book.rental_fee
+            'penalty_fee': book.penalty_fee
         } for book in books])
 
     return book_error_dict, 400
@@ -141,7 +141,7 @@ def update_book(book_id):
         book.author = book_schema.author
         book.image_url = book_schema.image_url
         book.quantity = book_schema.quantity
-        book.rental_fee = book_schema.rental_fee
+        book.penalty_fee = book_schema.penalty_fee
 
         db.session.commit()
 
@@ -167,18 +167,24 @@ def delete_book(book_id):
     Returns:
         dict: Response message.
     """
-    book_to_delete = Book.query.get(book_id)
+    try:
+        book_to_delete = Book.query.get(book_id)
 
-    if book_to_delete is None:
-        return book_error_dict, 400
+        if book_to_delete is None:
+            return book_error_dict, 400
 
-    db.session.delete(book_to_delete)
-    db.session.commit()
+        db.session.delete(book_to_delete)
+        db.session.commit()
 
-    return jsonify({
-        "Message": "Deletion successfull!"
-    }), 200
-
+        return jsonify({
+            "Message": "Deletion successfull!"
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        
+        return jsonify({
+            'Error': str(e)
+        }), 500
 
 @books_bp.route('/get_books', methods=['GET'])
 def get_books():
@@ -200,7 +206,7 @@ def get_books():
         'author': book.author,
         'image_url': book.image_url,
         'quantity': book.quantity,
-        'rental_fee': book.rental_fee
+        'penalty_fee': book.penalty_fee
     } for book in books]
 
     return jsonify({
