@@ -32,5 +32,4 @@ class Transaction(db.Model):
     type = db.Column(db.Enum('return', 'issue',
                                          name='transaction_types'),
                                  nullable=False)
-    amount = db.Column(db.Integer, default=0)
     date = db.Column(db.DateTime, default=datetime.now())

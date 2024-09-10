@@ -21,7 +21,6 @@ class TransactionSchema(BaseModel):
     book_id: int = Field(..., ge=1)
     member_id: int = Field(..., gt=0)
     type: TransactionType = Field(...)
-    amount: int = Field(default=0)
     date: datetime = Field(default_factory=datetime.now)
 
 
