@@ -31,7 +31,7 @@ def create_book():
         dict: dictionary containing status message.
     """
     try:
-        book_data = request.json
+        book_data = request.get_json()
 
         book_schema = BookSchema(**book_data)
 
@@ -47,19 +47,14 @@ def create_book():
         db.session.commit()
 
         return jsonify({
-            'message': 'Book created succesfully',
+            'Message': 'Book created succesfully',
             'book': book_schema.model_dump()
         }), 201
 
     except ValidationError as e:
         return jsonify({
-            'error': 'Validation failed',
-            'details': e.errors()
-        }), 400
-
-    except IntegrityError as e:
-        return jsonify({
-            'Error': 'Name already exists'
+            'Error': 'Validation failed',
+            'Details': e.errors()
         }), 400
 
 
@@ -177,8 +172,9 @@ def delete_book(book_id):
         db.session.commit()
 
         return jsonify({
-            "Message": "Deletion successfull!"
+            "Message": "Deletion succesfull!"
         }), 200
+
     except Exception as e:
         db.session.rollback()
         
