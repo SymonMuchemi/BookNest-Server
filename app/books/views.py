@@ -85,8 +85,8 @@ def get_by_name(string):
     return book_error_dict, 400
 
 
-@books_bp.route('/get_by_author/<string:name>')
-def get_by_author(name):
+@books_bp.route('/get_by_author/<string:string>')
+def get_by_author(string):
     """Gets a list of books from an author.
 
     Args:
@@ -95,9 +95,9 @@ def get_by_author(name):
     Returns:
         list: List of books.
     """
-    query_author = name.lower().replace('_', ' ')
+    query_author = string.lower().replace('_', ' ')
 
-    books = Book.query.filter_by(author=query_author).all()
+    books = Book.query.filter(Book.author.like(f"%{query_author}%")).all()
 
     if len(books) > 0:
         return jsonify([{
