@@ -68,7 +68,8 @@ def update_member(member_id):
     """
     member_data = request.json
 
-    member = Member.query.get(member_id)
+    # member = Member.query.get(member_id)
+    member = db.session.get(Member, member_id)
 
     if member is None:
         return members_error_dict, 400
@@ -84,13 +85,13 @@ def update_member(member_id):
 
         return jsonify({
             'Message': "Member updated successfully!",
-            'New member': member_schema.model_dump()
+            'Member': member_schema.model_dump()
         })
 
 
     except ValidationError as e:
         return jsonify({
-            'Error': 'Cannot update member',
+            'Error': 'Validation failed',
             'Details': e.errors()
         }), 400
 
@@ -105,7 +106,8 @@ def get_member_by_id(member_id):
     Returns:
         dict: Response dictionary
     """
-    member = Member.query.get(member_id)
+    # member = Member.query.get(member_id)
+    member = db.session.get(Member, member_id)
 
     if member is None:
         return members_error_dict, 400
@@ -162,7 +164,8 @@ def delete_member(member_id):
     Returns:
         dict: Response dictionary
     """
-    member = Member.query.get(member_id)
+    # member = Member.query.get(member_id)
+    member = db.session.get(Member, member_id)
 
     if member is None:
         return members_error_dict, 400
