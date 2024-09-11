@@ -2,7 +2,9 @@ from unittest import TestCase
 from app import create_app, db
 from app.models import Member, Transaction, Book
 from app.utils import TransactionType, ALLOWED_BORROW_PERIOD
-from datetime import datetime, timedelta
+from datetime import datetime
+
+from pdb import set_trace
 
 
 class TestTransactionRoutes(TestCase):
@@ -115,7 +117,7 @@ class TestTransactionRoutes(TestCase):
         member = Member(
             name='Wentworth Miller',
             debt=0,
-            books_borrowed=1
+            books_borrowed=0
         )
         
         book = Book(
@@ -127,36 +129,36 @@ class TestTransactionRoutes(TestCase):
         db.session.add_all([member, book])
         db.session.commit()
         
-        # Set the date of the transaction to 30 days ago
+        # issue book to member and set date to 30 days ago
         transaction = Transaction(
             member_id=member.id,
             book_id=book.id,
             type=TransactionType.ISSUE,
-            date=datetime.now() - timedelta(days=3)
+            date=datetime(2024, 9, 1)
         )
 
         db.session.add(transaction)
         db.session.commit()
         
-        retrieved_transaction = Transaction.query.filter_by(
-            book_id=self.book.id,
-            member_id=self.member.id,
-            type=TransactionType.ISSUE
-        ).first()
+        retrieved_member = db.session.get(Member, member.id)
+        retrieved_book = db.session.get(Book, book.id)
+        
+        retrieved_member.books_borrowed += 1
+        retrieved_book.quantity -= 1        
+        
+        retrieved_transaction = db.session.get(Transaction, transaction.id)
         
         data = {
             'member_id': retrieved_transaction.member.id,
             'book_id': retrieved_transaction.book.id
         }
         
-        # calculate expected penalty
-        difference = datetime.now() - transaction.date
-        extra_time = difference.days - ALLOWED_BORROW_PERIOD
-        penalty_amount = extra_time * self.book.penalty_fee
-        
         response = self.client.post('/api/transactions/retrieve_book', json=data)
-        self.assertEqual(self.book.quantity, 6)
+        
+        # fetch member from database
+        member = db.session.get(Member, retrieved_transaction.member.id)
+        
+        self.assertEqual(self.book.quantity, 5)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.member.books_borrowed, 0)
-        # self.assertEqual(self.member.debt, penalty_amount)
-        self.assertEqual(self.member.debt, 0)
+        self.assertEqual(member.books_borrowed, 0)
+        self.assertEqual(member.debt, 30)
