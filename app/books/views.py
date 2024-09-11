@@ -148,7 +148,7 @@ def update_book(book_id):
 
     except ValidationError as e:
         return jsonify({
-            'Error': 'Cannot update book',
+            'Error': 'Validation failed.',
             'Details': e.errors()
         }), 400
 
