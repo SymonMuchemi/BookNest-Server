@@ -4,7 +4,6 @@ from app.models import Member, Transaction, Book
 from app.utils import TransactionType, ALLOWED_BORROW_PERIOD
 from datetime import datetime
 
-from pdb import set_trace
 
 
 class TestTransactionRoutes(TestCase):
