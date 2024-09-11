@@ -4,8 +4,9 @@ from datetime import datetime
 from flask import jsonify, request
 from pydantic import ValidationError
 from ..utils import TransactionType, ALLOWED_BORROW_PERIOD
-from ..schema import TransactionSchema, BookRequestSchema
+from ..schema import BookRequestSchema
 from ..models import Transaction, Member, Book
+from pdb import set_trace
 
 member_error_dict = {
                 'Error': 'Cannot get member!'
@@ -108,6 +109,11 @@ def issue_book():
             return jsonify({
                 'Error': 'Member cannot borrow more than 3 books!'
             }), 400
+    
+        if member.debt > 0:
+            return jsonify({
+                'Error': 'Member must pay pending penalties!'
+            }), 400
             
         if book.quantity == 0:
             return jsonify({
@@ -177,11 +183,6 @@ def retrieve_book():
             return jsonify({
                 'Error': 'Cannot get member details from database!'
             }), 400
-
-        if member.debt > 0:
-            return jsonify({
-                'Error': 'Member must pay pending penalties!'
-            }), 400
             
         if book is None:
             return ({
@@ -192,13 +193,20 @@ def retrieve_book():
         
         # calculate charges
         difference = datetime.now() - date_of_issue
-        extra_time = difference.days - ALLOWED_BORROW_PERIOD
-        penalty_amount = extra_time * book.penalty_fee
+        days = difference.total_seconds() // 86400 
+        penalty_amount = 0
+        if days > ALLOWED_BORROW_PERIOD:
+            extra_time = days - ALLOWED_BORROW_PERIOD
+            penalty_amount = extra_time * book.penalty_fee
         
-        member.debt += penalty_amount
-        if member.debt > 500:
-            member.debt = 500
-        
+            member.debt += penalty_amount
+            
+            print(f'Penalty amount: {penalty_amount}')
+            print(f'Member debt: {member.debt}')
+            # set_trace()
+            if member.debt > 500:
+                member.debt = 500
+            
         book.quantity += 1
         member.books_borrowed -= 1
         
@@ -217,6 +225,7 @@ def retrieve_book():
         
         return jsonify({
             'Message': 'Recorded return transaction successfully',
+            'Penalty': penalty_amount,
             'Transaction': request_schema.model_dump()
         })
         
