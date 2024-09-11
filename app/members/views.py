@@ -55,11 +55,6 @@ def create_member():
             'Details': e.errors()
         }), 400
 
-    except IntegrityError as e:
-        return jsonify({
-            'Error': 'Name already exists',
-        }), 409
-
 
 @members_bp.route('/update/<int:member_id>', methods=['PUT'])
 def update_member(member_id):
