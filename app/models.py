@@ -1,6 +1,6 @@
 from . import db
 from datetime import datetime
-from utils import TransactionType
+from .utils import TransactionType
 
 
 class Book(db.Model):
