@@ -81,6 +81,13 @@ class TestBookRoutes(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(retrieved_book)
         self.assertIn('Deletion succesfull!', response.json['Message'])
+
+    def test_delete_book_on_invalid_id(self):
+        """Check if delete book route returns error on invalid id."""
+        response = self.client.delete('/api/books/delete/100')
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Could not find book', response.json['Error'])
         
     def test_get_books(self):
         """Check get_books route."""
@@ -174,6 +181,20 @@ class TestBookRoutes(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json), 3)
 
+    def test_get_by_name_on_empty_return(self):
+        """Check if get_by_id endpoint returns an error message if book is not found."""
+        response = self.client.get('/api/books/get_by_name/bob')
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Could not find book', response.json['Error'])
+
+    def test_get_by_author_on_empty_return(self):
+        """Check if get_by_author endpoint returns an error message if author is not found."""
+        response = self.client.get('/api/books/get_by_author/bob')
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Could not find book', response.json['Error'])
+
     def test_get_by_author(self):
         """Check if get_by_author endpoint returns appropriate data."""
         book1 = Book(
@@ -242,3 +263,31 @@ class TestBookRoutes(TestCase):
         self.assertEqual(10, response.json['New book']['quantity'])
         self.assertEqual(15, response.json['New book']['penalty_fee'])
         self.assertEqual('https://newurl.com/image.jpg', response.json['New book']['image_url'])
+
+    def test_update_on_invalid_data(self):
+        """Check if update route returns error on invalid data."""
+        book = Book(
+            name='Test Book',
+            author='John Doe',
+            image_url='https://test.com/image.jpg',
+            quantity=4,
+            penalty_fee=20
+        )
+        
+        db.session.add(book)
+        db.session.commit()
+        
+        update_data = {
+            'name': None,
+            'author': 258,
+            'image_url': 'https://newurl.com/image.jpg',
+            'quantity': 10,
+            'penalty_fee': 15
+        }
+        
+        retrieved_book = Book.query.filter_by(name='Test Book').first()
+        
+        response = self.client.put(f'/api/books/update/{retrieved_book.id}',json=update_data)
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Validation failed.', response.json['Error'])
