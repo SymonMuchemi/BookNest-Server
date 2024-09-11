@@ -1,5 +1,4 @@
 from unittest import TestCase
-from app.books.views import create_book
 from app.models import Book
 from app import create_app, db
 
