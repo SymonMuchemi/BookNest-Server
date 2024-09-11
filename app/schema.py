@@ -27,3 +27,4 @@ class TransactionSchema(BaseModel):
 class BookRequestSchema(BaseModel):
     member_id: int = Field(...)
     book_id: int = Field(...)
+    date: datetime = Field(default_factory=datetime.now)
