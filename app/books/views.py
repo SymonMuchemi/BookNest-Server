@@ -58,7 +58,7 @@ def create_book():
 
 @books_bp.route("/get_by_title/<string:string>", methods=["GET"])
 def get_by_title(string):
-    """Gets books with a given title.
+    """Gets books with a given title (in pages).
 
     Args:
         title (str): The title of the book.
@@ -75,7 +75,7 @@ def get_by_title(string):
         page=page, per_page=per_page
     )
 
-    if len(books) == 0 or books is None:
+    if books.total == 0:
         return book_error_dict, 400
 
     total_pages = ceil(books.total / per_page)
@@ -112,7 +112,7 @@ def get_by_title(string):
 
 @books_bp.route("/get_by_author/<string:string>")
 def get_by_author(string):
-    """Gets a list of books from an author.
+    """Gets a list of books from an author (in pages).
 
     Args:
         title (str): title of the author.
@@ -129,7 +129,7 @@ def get_by_author(string):
         page=page, per_page=per_page
     )
 
-    if len(books) == 0 or books is None:
+    if books.total == 0:
         return book_error_dict, 400
 
     total_pages = ceil(books.total / per_page)
