@@ -5,7 +5,7 @@ from datetime import datetime
 class Book(db.Model):
     __tablename__ = 'books'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
+    title = db.Column(db.String(255))
     author = db.Column(db.String(50))
     penalty_fee = db.Column(db.Integer, default=10)
     quantity = db.Column(db.Integer, nullable=False)

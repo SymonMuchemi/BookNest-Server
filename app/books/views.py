@@ -6,7 +6,6 @@ from ..models import Book
 
 from math import ceil
 from pydantic import ValidationError
-from sqlalchemy.exc import IntegrityError
 
 book_error_dict = {
     'Error': 'Could not find book'
@@ -36,10 +35,9 @@ def create_book():
         book_schema = BookSchema(**book_data)
 
         book = Book(
-            name=book_schema.name.lower(),
+            title=book_schema.title.lower(),
             author=book_schema.author.lower(),
             quantity=book_schema.quantity,
-            image_url=book_schema.image_url,
             penalty_fee=book_schema.penalty_fee
         )
         # add book data to database
@@ -58,26 +56,25 @@ def create_book():
         }), 400
 
 
-@books_bp.route('/get_by_name/<string:string>', methods=['GET'])
-def get_by_name(string):
-    """Gets books with a given name.
+@books_bp.route('/get_by_title/<string:string>', methods=['GET'])
+def get_by_title(string):
+    """Gets books with a given title.
 
     Args:
-        name (str): The name of the book.
+        title (str): The title of the book.
 
     Returns:
-        list: a list of all books with the given name.
+        list: a list of all books with the given title.
     """
-    query_name = string.lower().replace('_', ' ')
+    query_title = string.lower().replace('_', ' ')
 
-    books = Book.query.filter(Book.name.like(f"%{query_name}%")).all()
+    books = Book.query.filter(Book.title.like(f"%{query_title}%")).all()
 
     if len(books) > 0:
         return jsonify([{
             'id': book.id,
-            'name': book.name,
+            'title': book.title,
             'author': book.author,
-            'image_url': book.image_url,
             'quantity': book.quantity,
             'penalty_fee': book.penalty_fee
         } for book in books]), 200
@@ -90,7 +87,7 @@ def get_by_author(string):
     """Gets a list of books from an author.
 
     Args:
-        name (str): Name of the author.
+        title (str): title of the author.
 
     Returns:
         list: List of books.
@@ -102,9 +99,8 @@ def get_by_author(string):
     if len(books) > 0:
         return jsonify([{
             'id': book.id,
-            'name': book.name,
+            'title': book.title,
             'author': book.author,
-            'image_url': book.image_url,
             'quantity': book.quantity,
             'penalty_fee': book.penalty_fee
         } for book in books])
@@ -133,9 +129,8 @@ def update_book(book_id):
     try:
         book_schema = BookSchema(**book_data)
 
-        book.name = book_schema.name
+        book.title = book_schema.title
         book.author = book_schema.author
-        book.image_url = book_schema.image_url
         book.quantity = book_schema.quantity
         book.penalty_fee = book_schema.penalty_fee
 
@@ -199,9 +194,8 @@ def get_books():
 
     books_list = [{
         'id': book.id,
-        'name': book.name,
+        'title': book.title,
         'author': book.author,
-        'image_url': book.image_url,
         'quantity': book.quantity,
         'penalty_fee': book.penalty_fee
     } for book in books]

@@ -27,10 +27,9 @@ class TestBookRoutes(TestCase):
     def test_create_book(self):
         """Test the create_book route"""
         payload = {
-            "name": 'Testing',
+            "title": 'Testing',
             "author": 'John Doe',
             "quantity": 25,
-            "image_url": "https://some.site.com/image.jpg",
             "penalty_fee": 25
         }
 
@@ -38,19 +37,17 @@ class TestBookRoutes(TestCase):
                 
         self.assertEqual(response.status_code, 201)
         self.assertIn('Book created succesfully', response.json['Message'])
-        self.assertEqual(response.json['book']['name'], 'Testing')
+        self.assertEqual(response.json['book']['title'], 'Testing')
         self.assertEqual(response.json['book']['author'], 'John Doe')
         self.assertEqual(response.json['book']['quantity'], 25)
-        self.assertEqual(response.json['book']['image_url'], "https://some.site.com/image.jpg")
         self.assertEqual(response.json['book']['penalty_fee'], 25)
         
     def test_create_book_validation_error(self):
         """Test creation of book with invalid data"""
         payload = {
-            "name": None,
+            "title": None,
             "author": 258,
             "quantity": 5,
-            "image_url": "https://example.com/alchemist.jpg",
             "penalty_fee": 2.5
         }
 
@@ -62,9 +59,8 @@ class TestBookRoutes(TestCase):
     def test_delete_book(self):
         """Check if delete book route works"""
         book = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
@@ -72,11 +68,11 @@ class TestBookRoutes(TestCase):
         db.session.add(book)
         db.session.commit()
         
-        stored_book = Book.query.filter_by(name='Test Book').first()
+        stored_book = Book.query.filter_by(title='Test Book').first()
         
         response = self.client.delete(f'/api/books/delete/{stored_book.id}')
         
-        retrieved_book = Book.query.filter_by(name='Test Book').first()
+        retrieved_book = Book.query.filter_by(title='Test Book').first()
         
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(retrieved_book)
@@ -97,30 +93,26 @@ class TestBookRoutes(TestCase):
         }
 
         book1 = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
         book2 = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
         book3 = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
         book4 = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
@@ -147,25 +139,22 @@ class TestBookRoutes(TestCase):
     def test_get_by_name(self):
         """Check get_by_name endpoint return appropriate book data."""
         book1 = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
         
         book2 = Book(
-            name='Another book',
+            title='Another book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
 
         book3 = Book(
-            name='The Last Book',
+            title='The Last Book',
             author='Mitchelle White',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
@@ -198,25 +187,22 @@ class TestBookRoutes(TestCase):
     def test_get_by_author(self):
         """Check if get_by_author endpoint returns appropriate data."""
         book1 = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
         
         book2 = Book(
-            name='Another book',
+            title='Another book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
 
         book3 = Book(
-            name='The Last Book',
+            title='The Last Book',
             author='Mitchelle White',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
@@ -235,9 +221,8 @@ class TestBookRoutes(TestCase):
     def test_update(self):
         """Check if update routes updates book."""
         book = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
@@ -246,14 +231,13 @@ class TestBookRoutes(TestCase):
         db.session.commit()
         
         update_data = {
-            'name': 'Updated Book',
+            'title': 'Updated Book',
             'author': 'Jane Doe',
-            'image_url': 'https://newurl.com/image.jpg',
             'quantity': 10,
             'penalty_fee': 15
         }
         
-        retrieved_book = Book.query.filter_by(name='Test Book').first()
+        retrieved_book = Book.query.filter_by(title='Test Book').first()
         
         response = self.client.put(f'/api/books/update/{retrieved_book.id}',json=update_data)
         
@@ -262,14 +246,12 @@ class TestBookRoutes(TestCase):
         self.assertEqual('Jane Doe', response.json['New book']['author'])
         self.assertEqual(10, response.json['New book']['quantity'])
         self.assertEqual(15, response.json['New book']['penalty_fee'])
-        self.assertEqual('https://newurl.com/image.jpg', response.json['New book']['image_url'])
 
     def test_update_on_invalid_data(self):
         """Check if update route returns error on invalid data."""
         book = Book(
-            name='Test Book',
+            title='Test Book',
             author='John Doe',
-            image_url='https://test.com/image.jpg',
             quantity=4,
             penalty_fee=20
         )
@@ -278,14 +260,13 @@ class TestBookRoutes(TestCase):
         db.session.commit()
         
         update_data = {
-            'name': None,
+            'title': None,
             'author': 258,
-            'image_url': 'https://newurl.com/image.jpg',
             'quantity': 10,
             'penalty_fee': 15
         }
         
-        retrieved_book = Book.query.filter_by(name='Test Book').first()
+        retrieved_book = Book.query.filter_by(title='Test Book').first()
         
         response = self.client.put(f'/api/books/update/{retrieved_book.id}',json=update_data)
         

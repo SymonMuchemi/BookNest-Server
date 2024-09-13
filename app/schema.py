@@ -4,9 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class BookSchema(BaseModel):
-    name: str = Field(..., min_length=3, max_length=255)
+    title: str = Field(..., min_length=3, max_length=255)
     author: str = Field(..., min_length=3, max_length=255)
-    image_url: str = Field(..., min_length=10)
     quantity: int = Field(..., gt=0)
     penalty_fee: int = Field(ge=10, default=10)
 
