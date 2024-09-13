@@ -1,6 +1,5 @@
 from . import db
 from datetime import datetime
-from .utils import TransactionType
 
 
 class Book(db.Model):
@@ -8,7 +7,6 @@ class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     author = db.Column(db.String(50))
-    image_url = db.Column(db.Text)
     penalty_fee = db.Column(db.Integer, default=10)
     quantity = db.Column(db.Integer, nullable=False)
     
@@ -32,8 +30,8 @@ class Transaction(db.Model):
     member_id = db.Column(db.Integer, db.ForeignKey('members.id'))
     type = db.Column(
         db.Enum(
-            TransactionType.ISSUE,
-            TransactionType.RETURN,
+            'issue',
+            'return',
             name='transaction_types'),
         nullable=False
     )
