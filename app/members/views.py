@@ -6,7 +6,6 @@ from ..models import Member
 
 from math import ceil
 from pydantic import ValidationError
-from sqlalchemy.exc import IntegrityError
 
 members_error_dict = {
     'Error': 'Could not find member!'
