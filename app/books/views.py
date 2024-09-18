@@ -55,6 +55,10 @@ def create_book():
     except ValidationError as e:
         return jsonify({"Error": "Validation failed", "Details": e.errors()}), 400
 
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"Error": str(e)}), 500
+
 
 @books_bp.route("/get_by_title/<string:string>", methods=["GET"])
 def get_by_title(string):
