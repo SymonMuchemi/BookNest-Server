@@ -279,3 +279,31 @@ def get_books():
         ),
         200,
     )
+
+@books_bp.route("/get_by_id/<int:book_id>", methods=["GET"])
+def get_by_id(book_id):
+    """Gets a book by its id.
+
+    Args:
+        book_id (int): The book's id.
+
+    Returns:
+        dict: The book data.
+    """
+    book = db.session.get(Book, book_id)
+
+    if book is None:
+        return book_error_dict, 400
+
+    return (
+        jsonify(
+            {
+                "id": book.id,
+                "title": book.title,
+                "author": book.author,
+                "quantity": book.quantity,
+                "penalty_fee": book.penalty_fee,
+            }
+        ),
+        200,
+    )
