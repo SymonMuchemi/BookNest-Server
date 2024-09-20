@@ -230,3 +230,18 @@ class TestBookRoutes(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("Could not find book", response.json["Error"])
+
+    def test_get_by_id_route(self):
+        """Check if get_by_id route returns appropriate data."""
+        book = Book(title="Test Book", author="John Doe", quantity=4, penalty_fee=20)
+
+        db.session.add(book)
+        db.session.commit()
+
+        response = self.client.get(f"/api/books/get_by_id/{book.id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual("Test Book", response.json["title"])
+        self.assertEqual("John Doe", response.json["author"])
+        self.assertEqual(4, response.json["quantity"])
+        self.assertEqual(20, response.json["penalty_fee"])
