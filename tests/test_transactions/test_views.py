@@ -189,6 +189,50 @@ class TestTransactionRoutes(TestCase):
         self.assertEqual(member.books_borrowed, 0)
         self.assertEqual(member.debt, 30)
 
+    def test_retrieve_book_with_no_penalty(self):
+        """Test the retrieve book route with no penalty."""
+            
+        member = Member(name="Wentworth Miller", debt=0, books_borrowed=0)
+
+        book = Book(title="The Alchemist", author="Paulo Coelho", quantity=5)
+
+        db.session.add_all([member, book])
+        db.session.commit()
+
+        # issue book to member and set date to 5 days ago
+        transaction = Transaction(
+            member_id=member.id,
+            book_id=book.id,
+            type=TransactionType.ISSUE,
+            date=datetime.now() - timedelta(days=5),
+        )
+
+        db.session.add(transaction)
+        db.session.commit()
+
+        retrieved_member = db.session.get(Member, member.id)
+        retrieved_book = db.session.get(Book, book.id)
+
+        retrieved_member.books_borrowed += 1
+        retrieved_book.quantity -= 1
+
+        retrieved_transaction = db.session.get(Transaction, transaction.id)
+
+        data = {
+            "member_id": retrieved_transaction.member.id,
+            "book_id": retrieved_transaction.book.id,
+        }
+
+        response = self.client.post("/api/transactions/retrieve_book", json=data)
+
+        # fetch member from database
+        member = db.session.get(Member, retrieved_transaction.member.id)
+
+        self.assertEqual(self.book.quantity, 5)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(member.books_borrowed, 0)
+        self.assertEqual(member.debt, 0)
+
     def test_get_transactions(self):
         """Test the get transactions route."""
         Transaction.query.delete()
