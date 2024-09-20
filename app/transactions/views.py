@@ -6,83 +6,23 @@ from pydantic import ValidationError
 from ..utils import TransactionType, ALLOWED_BORROW_PERIOD
 from ..schema import BookRequestSchema
 from ..models import Transaction, Member, Book
-from pdb import set_trace
+from math import ceil
 
-member_error_dict = {
-                'Error': 'Cannot get member!'
-            }
+member_error_dict = {"Error": "Cannot get member!"}
+book_error_dict = {"Error": "Cannot get book!"}
 
 
-@transactions_bp.route('/hello', methods=['GET'])
+@transactions_bp.route("/hello", methods=["GET"])
 def hello_world():
     """Returns a hello string.
 
     Returns:
         str: A hello string.
     """
-    return 'Hello from transactions.'
+    return "Hello from transactions."
 
 
-# @transactions_bp.route('/create', methods=['POST', 'GET'])
-# def create_transaction():
-#     """Records a transaction and updates members.debt.
-
-#     Returns:
-#         dict: Response message.
-#     """
-#     data = request.json
-    
-#     try:
-#         transaction_schema = TransactionSchema(**data)
-        
-#         member_id = transaction_schema.member_id
-#         book_id = transaction_schema.book_id
-#         transaction_type = transaction_schema.type
-#         amount = transaction_schema.amount
-        
-#         member = Member.query.get(member_id)
-#         book = Book.query.get(book_id)
-        
-#         if member is None or book is None:
-#             return jsonify({
-#                 'Message': 'Cannot find member or book details'
-#             }), 400
-        
-#         if transaction_type == TransactionType.RETURN and member.debt > 0:
-#             member.debt -= amount
-#         if transaction_type == TransactionType.ISSUE and book.rental_fee > 0:
-#             if member.debt + book.rental_fee > 500:
-#                 return jsonify({
-#                     'Error': "Member's debt will exceed ksh 500"
-#                 }), 400
-
-#             member.debt += book.rental_fee
-
-#         transaction = Transaction(
-#             book_id=book_id,
-#             member_id=member_id,
-#             type=transaction_type,
-#             amount=amount,
-#             date=transaction_schema.date
-#         )
-
-#         db.session.add(member)
-#         db.session.add(transaction)
-#         db.session.commit()
-        
-#         return jsonify({
-#             'Message': 'Transaction recorded succefully',
-#             'transaction': transaction_schema.model_dump(),
-#         }), 201
-
-#     except ValidationError as e:
-#         return jsonify({
-#             'Error': 'Validation failed',
-#             'Details': e.errors()
-#         }), 400
-
-
-@transactions_bp.route('/issue_book', methods=['GET', 'POST'])
+@transactions_bp.route("/issue_book", methods=["GET", "POST"])
 def issue_book():
     """Issues a book to a member if the member is allowed to.
 
@@ -90,65 +30,59 @@ def issue_book():
         dict: Dictionary response message.
     """
     data = request.json
-    
+
     try:
         return_schema = BookRequestSchema(**data)
 
-        member_id = return_schema.member_id    
+        member_id = return_schema.member_id
         book_id = return_schema.book_id
-            
-        # member = Member.query.get(member_id)
+
         member = db.session.get(Member, member_id)
-        # book = Book.query.get(book_id)
         book = db.session.get(Book, book_id)
-        
+
         if member is None:
             return member_error_dict, 400
-        
+
         if member.books_borrowed >= 3:
-            return jsonify({
-                'Error': 'Member cannot borrow more than 3 books!'
-            }), 400
-    
+            return jsonify({"Error": "Member cannot borrow more than 3 books!"}), 400
+
         if member.debt > 0:
-            return jsonify({
-                'Error': 'Member must pay pending penalties!'
-            }), 400
-            
+            return jsonify({"Error": "Member must pay pending penalties!"}), 400
+
+        if book is None:
+            return book_error_dict, 400
+
         if book.quantity == 0:
-            return jsonify({
-                'Error': 'Book not available'
-            }), 400
-        
+            return jsonify({"Error": "Book not available"}), 400
+
         # add a book to the member object
         member.books_borrowed += 1
         book.quantity -= 1
-        
+
         transaction = Transaction(
-            book_id = return_schema.book_id,
-            member_id = return_schema.member_id,
-            type = TransactionType.ISSUE,
+            book_id=return_schema.book_id,
+            member_id=return_schema.member_id,
+            type=TransactionType.ISSUE,
         )
-        
+
         db.session.add(member)
         db.session.add(book)
         db.session.add(transaction)
-        
+
         db.session.commit()
-        
-        return jsonify({
-            'Message': 'Book issue recorded successfully',
-            'Transaction': return_schema.model_dump()
-        })
-        
+
+        return jsonify(
+            {
+                "Message": "Book issue recorded successfully",
+                "Transaction": return_schema.model_dump(),
+            }
+        )
+
     except ValidationError as e:
-        return jsonify({
-            'Error': 'Validation failed',
-            'Details': e.errors()
-        }), 400
+        return jsonify({"Error": "Validation failed", "Details": e.errors()}), 400
 
 
-@transactions_bp.route('/retrieve_book', methods=['POST', 'GET', 'PUT'])
+@transactions_bp.route("/retrieve_book", methods=["POST", "GET", "PUT"])
 def retrieve_book():
     """Takes record of book returned.
 
@@ -156,87 +90,113 @@ def retrieve_book():
         dict: Dictionary response message.
     """
     data = request.json
-    
+
     try:
         request_schema = BookRequestSchema(**data)
-        
+
         book_id = request_schema.book_id
         member_id = request_schema.member_id
-        
+
         book_record = Transaction.query.filter_by(
-            book_id=book_id,
-            member_id=member_id,
-            type=TransactionType.ISSUE
-            ).first()
-        
+            book_id=book_id, member_id=member_id, type=TransactionType.ISSUE
+        ).first()
+
         if book_record is None:
-            return jsonify({
-                "Error": 'Cannot retrieve book record.'
-            }), 400
-                
-        # member = Member.query.get(member_id)
+            return jsonify({"Error": "Cannot retrieve book record."}), 400
+
         member = db.session.get(Member, member_id)
-        # book = Book.query.get(book_id)
         book = db.session.get(Book, book_id)
-        
+
         if member is None:
-            return jsonify({
-                'Error': 'Cannot get member details from database!'
-            }), 400
-            
+            return jsonify({"Error": "Cannot get member details from database!"}), 400
+
         if book is None:
-            return ({
-                'Error': 'Connot retrieve book data from the database.'
-            }), 400
-            
+            return ({"Error": "Connot retrieve book data from the database."}), 400
+
         date_of_issue = book_record.date
-        
+
         # calculate charges
         difference = datetime.now() - date_of_issue
-        days = difference.total_seconds() // 86400 
+        days = difference.total_seconds() // 86400
         penalty_amount = 0
         if days > ALLOWED_BORROW_PERIOD:
             extra_time = days - ALLOWED_BORROW_PERIOD
             penalty_amount = extra_time * book.penalty_fee
-        
+
             member.debt += penalty_amount
-            
-            print(f'Penalty amount: {penalty_amount}')
-            print(f'Member debt: {member.debt}')
-            # set_trace()
             if member.debt > 500:
                 member.debt = 500
-            
+
         book.quantity += 1
         member.books_borrowed -= 1
-        
+
         transaction = Transaction(
-                book_id = book_id,
-                member_id = member_id,
-                type = TransactionType.RETURN,
-            )
-        
+            book_id=book_id,
+            member_id=member_id,
+            type=TransactionType.RETURN,
+        )
+
         db.session.merge(book)
         db.session.merge(member)
-        
+
         db.session.add(transaction)
-        
+
         db.session.commit()
-        
-        return jsonify({
-            'Message': 'Recorded return transaction successfully',
-            'Penalty': penalty_amount,
-            'Transaction': request_schema.model_dump()
-        })
-        
+
+        return jsonify(
+            {
+                "Message": "Recorded return transaction successfully",
+                "Penalty": penalty_amount,
+                "Transaction": request_schema.model_dump(),
+            }
+        )
+
     except ValidationError as e:
-        return jsonify({
-            'Error': 'Validation failed',
-            'Details': e.errors()
-        }), 400
+        return jsonify({"Error": "Validation failed", "Details": e.errors()}), 400
 
     except Exception as e:
-        return jsonify({
-            'Message': 'Cannot complete transaction',
-            'Error': str(e)
-        }), 400
+        return jsonify({"Message": "Cannot complete transaction", "Error": str(e)}), 400
+
+
+@transactions_bp.route("/get_transactions", methods=["GET"])
+def get_all_transactions():
+    """Returns all transaction records in pagination.
+
+    Returns:
+        dict: Dictionary response message.
+    """
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=10, type=int)
+
+    transactions = Transaction.query.paginate(page=page, per_page=per_page)
+
+    if transactions.total == 0:
+        return jsonify({"Message": "No transactions found"}), 400
+
+    total_pages = ceil(transactions.total / per_page)
+
+    transactions_list = [
+        {
+            "id": transaction.id,
+            "book_id": transaction.book_id,
+            "member_id": transaction.member_id,
+            "type": transaction.type,
+            "date": transaction.date,
+        }
+        for transaction in transactions
+    ]
+
+    return jsonify(
+        {
+            "total_transactions": transactions.total,
+            "total_pages": total_pages,
+            "pages": transactions.pages,
+            "current_page": page,
+            "transactions": transactions_list,
+            "per_page": per_page,
+            "has_next": transactions.has_next,
+            "has_prev": transactions.has_prev,
+            "next_page": transactions.next_num if transactions.has_next else None,
+            "prev_page": transactions.prev_num if transactions.has_prev else None,
+        }
+    )
