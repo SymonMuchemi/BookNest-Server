@@ -92,6 +92,9 @@ def issue_book():
     except ValidationError as e:
         return jsonify({"Error": "Validation failed", "Details": e.errors()}), 400
 
+    except Exception as e:
+        return jsonify({"Error": "Cannot complete transaction", "Details": str(e)}), 400
+
 
 @transactions_bp.route("/retrieve_book", methods=["POST", "GET", "PUT"])
 def retrieve_book():
