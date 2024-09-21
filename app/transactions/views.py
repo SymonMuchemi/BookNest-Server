@@ -143,7 +143,7 @@ def retrieve_book():
                 penalty_amount = 500
 
             member.debt += penalty_amount
-            if member.debt + penalty_amount> 500:
+            if member.debt + penalty_amount > 500:
                 member.debt = 500
 
         book.quantity += 1
@@ -178,7 +178,7 @@ def retrieve_book():
 
 
 @transactions_bp.route("/get_transactions", methods=["GET"])
-def get_all_transactions():
+def get_transactions():
     """Returns all transaction records in pagination.
 
     Returns:
@@ -203,7 +203,9 @@ def get_all_transactions():
                 "member_id": transaction.member_id,
                 "member_name": transaction.member.name,
                 "type": transaction.type,
-                "date": transaction.date,
+                "issued_on": transaction.issued_on,
+                "returned_on": transaction.returned_on,
+                "charge": transaction.charge,
             }
             for transaction in transactions
         ]
