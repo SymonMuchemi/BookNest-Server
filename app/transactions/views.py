@@ -10,6 +10,7 @@ from math import ceil
 
 member_error_dict = {"Error": "Cannot get member!"}
 book_error_dict = {"Error": "Cannot get book!"}
+transcation_error_dict = {"Error": "Cannot complete transaction"}
 
 
 @transactions_bp.route("/hello", methods=["GET"])
@@ -55,19 +56,26 @@ def issue_book():
         if book.quantity == 0:
             return jsonify({"Error": "Book not available"}), 400
 
-        # add a book to the member object
-        member.books_borrowed += 1
-        book.quantity -= 1
+        # search for existing transaction
+        issue_record = Transaction.query.filter_by(
+            book_id=book_id, member_id=member_id, type=TransactionType.ISSUE
+        ).first()
 
-        transaction = Transaction(
-            book_id=return_schema.book_id,
-            member_id=return_schema.member_id,
+        if issue_record is not None:
+            return jsonify({"Error": "Book already issued to member"}), 400
+
+        book.quantity -= 1
+        member.books_borrowed += 1
+
+        record = Transaction(
+            book_id=book_id,
+            member_id=member_id,
             type=TransactionType.ISSUE,
         )
 
-        db.session.add(member)
-        db.session.add(book)
-        db.session.add(transaction)
+        db.session.merge(book)
+        db.session.merge(member)
+        db.session.add(record)
 
         db.session.commit()
 
