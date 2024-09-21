@@ -71,11 +71,14 @@ def issue_book():
 
         db.session.commit()
 
-        return jsonify(
-            {
-                "Message": "Book issue recorded successfully",
-                "Transaction": return_schema.model_dump(),
-            }
+        return (
+            jsonify(
+                {
+                    "Message": "Book issue recorded successfully",
+                    "Transaction": return_schema.model_dump(),
+                }
+            ),
+            201,
         )
 
     except ValidationError as e:
@@ -168,35 +171,40 @@ def get_all_transactions():
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=10, type=int)
 
-    transactions = Transaction.query.paginate(page=page, per_page=per_page)
+    try:
+        transactions = Transaction.query.paginate(page=page, per_page=per_page)
 
-    if transactions.total == 0:
-        return jsonify({"Message": "No transactions found"}), 400
+        if transactions.total == 0:
+            return jsonify({"Message": "No transactions found"}), 400
 
-    total_pages = ceil(transactions.total / per_page)
+        total_pages = ceil(transactions.total / per_page)
 
-    transactions_list = [
-        {
-            "id": transaction.id,
-            "book_id": transaction.book_id,
-            "member_id": transaction.member_id,
-            "type": transaction.type,
-            "date": transaction.date,
-        }
-        for transaction in transactions
-    ]
+        transactions_list = [
+            {
+                "id": transaction.id,
+                "book_id": transaction.book_id,
+                "book_title": transaction.book.title,
+                "member_id": transaction.member_id,
+                "member_name": transaction.member.name,
+                "type": transaction.type,
+                "date": transaction.date,
+            }
+            for transaction in transactions
+        ]
 
-    return jsonify(
-        {
-            "total_transactions": transactions.total,
-            "total_pages": total_pages,
-            "pages": transactions.pages,
-            "current_page": page,
-            "transactions": transactions_list,
-            "per_page": per_page,
-            "has_next": transactions.has_next,
-            "has_prev": transactions.has_prev,
-            "next_page": transactions.next_num if transactions.has_next else None,
-            "prev_page": transactions.prev_num if transactions.has_prev else None,
-        }
-    )
+        return jsonify(
+            {
+                "total_transactions": transactions.total,
+                "total_pages": total_pages,
+                "pages": transactions.pages,
+                "current_page": page,
+                "transactions": transactions_list,
+                "per_page": per_page,
+                "has_next": transactions.has_next,
+                "has_prev": transactions.has_prev,
+                "next_page": transactions.next_num if transactions.has_next else None,
+                "prev_page": transactions.prev_num if transactions.has_prev else None,
+            }
+        )
+    except Exception as e:
+        return jsonify({"Error": str(e)}), 400
