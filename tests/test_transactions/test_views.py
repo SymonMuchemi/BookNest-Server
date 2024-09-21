@@ -323,19 +323,3 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Validation failed", response.json["Error"])
-
-    def test_retrieve_book_updates_member_debt_on_penalty(self):
-        """Test the retrieve book route updates member debt on penalty."""
-        pass
-
-    def test_penalty_update_on_retrieve_book(self):
-        """Test the penalty update on retrieve book route."""
-        pass
-
-    def test_retrieve_book_with_no_penalty(self):
-        """Test the retrieve book route with no penalty."""
-        pass
-
-    def test_get_transactions(self):
-        """Test the get transactions route."""
-        pass
