@@ -323,3 +323,11 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Validation failed", response.json["Error"])
+
+    def test_retrieve_book_on_invalid_id(self):
+        """Test the retrieve book route with invalid id."""
+        data = {"member_id": 1, "book_id": sys.maxsize, "type": "return"}
+
+        response = self.client.post("/api/transactions/retrieve_book", json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Book not issued to member!", response.json["Error"])
