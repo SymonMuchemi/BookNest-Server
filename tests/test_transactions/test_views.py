@@ -182,7 +182,7 @@ class TestTransactionRoutes(TestCase):
         self.assertEqual(record.member_id, self.test_member.id)
         self.assertIsNotNone(record.returned_on)
         self.assertEqual(record.charge, 0)
-    
+
     def test_retrieve_book_on_book_not_issued(self):
         """Test the retrieve book route on a book not issued."""
         data = {
@@ -193,7 +193,7 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Book not issued to member", response.json["Error"])
-    
+
     def test_retrieve_book_on_invalid_member(self):
         """Test the retrieve book route with invalid member."""
         data = {
@@ -204,7 +204,7 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Book not issued to member!", response.json["Error"])
-        
+
     def test_retrieve_book_on_invalid_book(self):
         """Test the retrieve book route with invalid book."""
         data = {
@@ -215,7 +215,7 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Book not issued to member!", response.json["Error"])
-    
+
     def test_retrieve_book_on_penalizing_member(self):
         """Test the retrieve book route on a penalizing member."""
         issue_record = Transaction(
@@ -224,25 +224,27 @@ class TestTransactionRoutes(TestCase):
             type=TransactionType.ISSUE,
             issued_on=datetime.now() - timedelta(days=10),
         )
-        
+
         db.session.add(issue_record)
         db.session.commit()
-        
+
         data = {
             "member_id": self.test_member.id,
             "book_id": self.test_book.id,
         }
-        
+
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Return transaction recorded successfully", response.json["Message"])
-        
+        self.assertIn(
+            "Return transaction recorded successfully", response.json["Message"]
+        )
+
         record = Transaction.query.filter_by(
             book_id=self.test_book.id, member_id=self.test_member.id
         ).first()
-        
+
         member = db.session.get(Member, self.test_member.id)
-        
+
         self.assertEqual(record.charge, 30)
         self.assertEqual(record.charge, member.debt)
         self.assertEqual(record.type, TransactionType.RETURN)
@@ -255,29 +257,31 @@ class TestTransactionRoutes(TestCase):
             type=TransactionType.ISSUE,
             issued_on=datetime.now() - timedelta(days=5),
         )
-        
+
         db.session.add(issue_record)
         db.session.commit()
-        
+
         data = {
             "member_id": self.test_member.id,
             "book_id": self.test_book.id,
         }
-        
+
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Return transaction recorded successfully", response.json["Message"])
-        
+        self.assertIn(
+            "Return transaction recorded successfully", response.json["Message"]
+        )
+
         record = Transaction.query.filter_by(
             book_id=self.test_book.id, member_id=self.test_member.id
         ).first()
-        
+
         member = db.session.get(Member, self.test_member.id)
-        
+
         self.assertEqual(record.charge, 0)
         self.assertEqual(record.charge, member.debt)
         self.assertEqual(record.type, TransactionType.RETURN)
-    
+
     def test_retrieve_book_on_invalid_data(self):
         """Test the retrieve book route with invalid data."""
         data = {"member_id": sys.maxsize, "book_id": None}
@@ -285,7 +289,7 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Validation failed", response.json["Error"])
-        
+
     def test_retrieve_book_on_penalizing_member_with_max_debt(self):
         """Test the retrieve book route on a penalizing member with max debt."""
         issue_record = Transaction(
@@ -294,28 +298,32 @@ class TestTransactionRoutes(TestCase):
             type=TransactionType.ISSUE,
             issued_on=datetime.now() - timedelta(days=100),
         )
-        
+
         db.session.add(issue_record)
         db.session.commit()
-        
+
         retrieve_data = {
             "member_id": self.test_member.id,
             "book_id": self.test_book.id,
         }
-        
-        response = self.client.post("/api/transactions/retrieve_book", json=retrieve_data)
+
+        response = self.client.post(
+            "/api/transactions/retrieve_book", json=retrieve_data
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Return transaction recorded successfully", response.json["Message"])
-        
+        self.assertIn(
+            "Return transaction recorded successfully", response.json["Message"]
+        )
+
         record = Transaction.query.filter_by(
             book_id=self.test_book.id, member_id=self.test_member.id
         ).first()
-        
+
         member = db.session.get(Member, self.test_member.id)
-        
+
         self.assertEqual(record.charge, 500)
         self.assertEqual(record.charge, member.debt)
-        
+
     def test_retrieve_book_on_invalid_data(self):
         """Test the retrieve book route with invalid data."""
         data = {"member_id": sys.maxsize, "book_id": None}
@@ -331,3 +339,31 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Book not issued to member!", response.json["Error"])
+
+    def test_get_all_transactions(self):
+        """Test the get all transactions route."""
+        issue_data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+
+        self.client.post("/api/transactions/issue_book", json=issue_data)
+
+        response = self.client.get("/api/transactions/get_transactions")
+        
+        retrieved_record = Transaction.query.filter_by(
+            book_id=self.test_book.id, member_id=self.test_member.id
+        ).first()
+                
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 10)
+        self.assertEqual(len(response.json['transactions'][0]), 9)
+        self.assertEqual(response.json['transactions'][0]["id"], retrieved_record.id)
+        self.assertEqual(response.json['transactions'][0]["book_id"], self.test_book.id)
+        self.assertEqual(response.json['transactions'][0]["book_title"], self.test_book.title)
+        self.assertEqual(response.json['transactions'][0]["member_id"], self.test_member.id)
+        self.assertEqual(response.json['transactions'][0]["member_name"], self.test_member.name)
+        self.assertEqual(response.json['transactions'][0]["type"], TransactionType.ISSUE)
+        self.assertIsNotNone(response.json['transactions'][0]["issued_on"])
+        self.assertIsNone(response.json['transactions'][0]["returned_on"])
+        self.assertEqual(response.json['transactions'][0]["charge"], 0)
