@@ -2,7 +2,7 @@ from app import db
 from app.books import books_bp
 from flask import request, jsonify
 from ..schema import BookSchema
-from ..models import Book
+from ..models import Book, Transaction
 
 from math import ceil
 from pydantic import ValidationError
@@ -226,6 +226,13 @@ def delete_book(book_id):
         if book_to_delete is None:
             return book_error_dict, 400
 
+        pending_transaction = Transaction.query.filter_by(
+            book_id=book_id, type="issue"
+        ).first()
+
+        if pending_transaction is not None:
+            return jsonify({"Error": "Book has pending transactions"}), 400
+
         db.session.delete(book_to_delete)
         db.session.commit()
 
@@ -279,6 +286,7 @@ def get_books():
         ),
         200,
     )
+
 
 @books_bp.route("/get_by_id/<int:book_id>", methods=["GET"])
 def get_by_id(book_id):
