@@ -10,6 +10,9 @@ from math import ceil
 
 member_error_dict = {"Error": "Cannot get member!"}
 book_error_dict = {"Error": "Cannot get book!"}
+transcation_error_dict = {"Error": "Cannot complete transaction"}
+record_error_dict = {"Error": "Cannot retrieve book record"}
+book_not_issued_error_dict = {"Error": "Book not issued to member!"}
 
 
 @transactions_bp.route("/hello", methods=["GET"])
@@ -55,19 +58,26 @@ def issue_book():
         if book.quantity == 0:
             return jsonify({"Error": "Book not available"}), 400
 
-        # add a book to the member object
-        member.books_borrowed += 1
-        book.quantity -= 1
+        # search for existing transaction
+        issue_record = Transaction.query.filter_by(
+            book_id=book_id, member_id=member_id, type=TransactionType.ISSUE
+        ).first()
 
-        transaction = Transaction(
-            book_id=return_schema.book_id,
-            member_id=return_schema.member_id,
+        if issue_record is not None:
+            return jsonify({"Error": "Book already issued to member"}), 400
+
+        book.quantity -= 1
+        member.books_borrowed += 1
+
+        record = Transaction(
+            book_id=book_id,
+            member_id=member_id,
             type=TransactionType.ISSUE,
         )
 
-        db.session.add(member)
-        db.session.add(book)
-        db.session.add(transaction)
+        db.session.merge(book)
+        db.session.merge(member)
+        db.session.add(record)
 
         db.session.commit()
 
@@ -83,6 +93,9 @@ def issue_book():
 
     except ValidationError as e:
         return jsonify({"Error": "Validation failed", "Details": e.errors()}), 400
+
+    except Exception as e:
+        return jsonify({"Error": "Cannot complete transaction", "Details": str(e)}), 400
 
 
 @transactions_bp.route("/retrieve_book", methods=["POST", "GET", "PUT"])
@@ -105,7 +118,7 @@ def retrieve_book():
         ).first()
 
         if book_record is None:
-            return jsonify({"Error": "Cannot retrieve book record."}), 400
+            return jsonify(book_not_issued_error_dict), 400
 
         member = db.session.get(Member, member_id)
         book = db.session.get(Book, book_id)
@@ -116,7 +129,7 @@ def retrieve_book():
         if book is None:
             return ({"Error": "Connot retrieve book data from the database."}), 400
 
-        date_of_issue = book_record.date
+        date_of_issue = book_record.issued_on
 
         # calculate charges
         difference = datetime.now() - date_of_issue
@@ -126,32 +139,35 @@ def retrieve_book():
             extra_time = days - ALLOWED_BORROW_PERIOD
             penalty_amount = extra_time * book.penalty_fee
 
+            if penalty_amount > 500:
+                penalty_amount = 500
+
             member.debt += penalty_amount
-            if member.debt > 500:
+            if member.debt + penalty_amount> 500:
                 member.debt = 500
 
         book.quantity += 1
         member.books_borrowed -= 1
 
-        transaction = Transaction(
-            book_id=book_id,
-            member_id=member_id,
-            type=TransactionType.RETURN,
-        )
+        # update the book record
+        book_record.returned_on = datetime.now()
+        book_record.charge = penalty_amount
+        book_record.type = TransactionType.RETURN
 
         db.session.merge(book)
         db.session.merge(member)
-
-        db.session.add(transaction)
+        db.session.merge(book_record)
 
         db.session.commit()
 
-        return jsonify(
-            {
-                "Message": "Recorded return transaction successfully",
-                "Penalty": penalty_amount,
-                "Transaction": request_schema.model_dump(),
-            }
+        return (
+            jsonify(
+                {
+                    "Message": "Return transaction recorded successfully",
+                    "Transaction": request_schema.model_dump(),
+                }
+            ),
+            200,
         )
 
     except ValidationError as e:

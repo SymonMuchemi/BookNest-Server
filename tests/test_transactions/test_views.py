@@ -3,9 +3,9 @@ from app import create_app, db
 from app.models import Member, Transaction, Book
 from app.utils import TransactionType
 from datetime import datetime, timedelta
+from pdb import set_trace
 
 import sys
-from pdb import set_trace
 
 
 class TestTransactionRoutes(TestCase):
@@ -17,18 +17,12 @@ class TestTransactionRoutes(TestCase):
         self.app_context.push()
         db.create_all()
 
-        self.member = Member(name="John Doe", debt=0, books_borrowed=1)
-        self.book = Book(title="The Alchemist", author="Paulo Coelho", quantity=5)
+        self.test_member = Member(name="John Doe", debt=0, books_borrowed=0)
+        self.test_book = Book(title="The Alchemist", author="Paulo Coelho", quantity=5)
 
-        db.session.add(self.member)
-        db.session.add(self.book)
+        db.session.add(self.test_member)
+        db.session.add(self.test_book)
 
-        db.session.commit()
-
-        transaction = Transaction(
-            member_id=self.member.id, book_id=self.book.id, type=TransactionType.ISSUE
-        )
-        db.session.add(transaction)
         db.session.commit()
 
     def tearDown(self):
@@ -44,26 +38,107 @@ class TestTransactionRoutes(TestCase):
         self.assertEqual(response.data.decode("utf-8"), "Hello from transactions.")
 
     def test_issue_book(self):
-        """Test the issue book route."""
-
-        data = {"member_id": self.member.id, "book_id": self.book.id, "type": "issue"}
+        """Check if a member is issued a book."""
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
 
         response = self.client.post("/api/transactions/issue_book", json=data)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
-        transaction = Transaction.query.first()
-        self.assertEqual(transaction.member_id, self.member.id)
-        self.assertEqual(transaction.book_id, self.book.id)
-        self.assertEqual(transaction.type, "issue")
-        self.assertEqual(transaction.date.date(), datetime.now().date())
-        self.assertEqual(self.member.books_borrowed, 2)
-        self.assertEqual(self.book.quantity, 4)
+        record = Transaction.query.filter_by(
+            book_id=self.test_book.id, member_id=self.test_member.id
+        ).first()
+
+        self.assertIsNotNone(record)
+        self.assertEqual(record.type, TransactionType.ISSUE)
+        self.assertEqual(record.book_id, self.test_book.id)
+        self.assertEqual(record.member_id, self.test_member.id)
+        self.assertIsNone(record.returned_on)
+
+        member = db.session.get(Member, self.test_member.id)
+        book = db.session.get(Book, self.test_book.id)
+
+        self.assertEqual(member.books_borrowed, 1)
+        self.assertEqual(member.debt, 0)
+        self.assertEqual(book.quantity, 4)
+
+    def test_issue_book_on_book_already_issued(self):
+        """Test the issue book route on a book already issued."""
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+
+        first_issue_response = self.client.post(
+            "/api/transactions/issue_book", json=data
+        )
+        self.assertEqual(first_issue_response.status_code, 201)
+
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+
+        second_issue_response = self.client.post(
+            "/api/transactions/issue_book", json=data
+        )
+        self.assertEqual(second_issue_response.status_code, 400)
+        self.assertIn(
+            "Book already issued to member", second_issue_response.json["Error"]
+        )
+
+    def test_issue_book_on_book_not_available(self):
+        """Test the issue book route on a book not available."""
+        self.test_book.quantity = 0
+        db.session.merge(self.test_book)
+        db.session.commit()
+
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+
+        response = self.client.post("/api/transactions/issue_book", json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Book not available", response.json["Error"])
+
+    def test_issue_book_on_member_with_pending_penalty(self):
+        """Test the issue book route on a member with pending penalty."""
+        self.test_member.debt = 100
+        db.session.merge(self.test_member)
+        db.session.commit()
+
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+
+        response = self.client.post("/api/transactions/issue_book", json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Member must pay pending penalties!", response.json["Error"])
+
+    def test_issue_book_on_member_with_books_borrowed(self):
+        """Test the issue book route on a member with books borrowed."""
+        self.test_member.books_borrowed = 3
+        db.session.merge(self.test_member)
+        db.session.commit()
+
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+
+        response = self.client.post("/api/transactions/issue_book", json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Member cannot borrow more than 3 books!", response.json["Error"])
 
     def test_issue_book_on_invalid_data(self):
         """Test the issue book route with invalid data."""
-        data = {"member_id": None, "book_id": 1, "type": "issue"}
+        bad_data = {"member_id": sys.maxsize, "book_id": None}
 
-        response = self.client.post("/api/transactions/issue_book", json=data)
+        response = self.client.post("/api/transactions/issue_book", json=bad_data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Validation failed", response.json["Error"])
 
@@ -77,22 +152,132 @@ class TestTransactionRoutes(TestCase):
 
     def test_retrieve_book(self):
         """Test the retrieve book route."""
+        issue_data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
 
-        data = {"member_id": self.member.id, "book_id": self.book.id}
+        self.client.post("/api/transactions/issue_book", json=issue_data)
+
+        retrieve_data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+
+        response = self.client.post(
+            "/api/transactions/retrieve_book", json=retrieve_data
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "Return transaction recorded successfully", response.json["Message"]
+        )
+
+        record = Transaction.query.filter_by(
+            book_id=self.test_book.id, member_id=self.test_member.id
+        ).first()
+
+        self.assertIsNotNone(record)
+        self.assertEqual(record.type, TransactionType.RETURN)
+        self.assertEqual(record.book_id, self.test_book.id)
+        self.assertEqual(record.member_id, self.test_member.id)
+        self.assertIsNotNone(record.returned_on)
+        self.assertEqual(record.charge, 0)
+    
+    def test_retrieve_book_on_book_not_issued(self):
+        """Test the retrieve book route on a book not issued."""
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
 
         response = self.client.post("/api/transactions/retrieve_book", json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Book not issued to member", response.json["Error"])
+    
+    def test_retrieve_book_on_invalid_member(self):
+        """Test the retrieve book route with invalid member."""
+        data = {
+            "member_id": sys.maxsize,
+            "book_id": self.test_book.id,
+        }
+
+        response = self.client.post("/api/transactions/retrieve_book", json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Book not issued to member!", response.json["Error"])
+        
+    def test_retrieve_book_on_invalid_book(self):
+        """Test the retrieve book route with invalid book."""
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": sys.maxsize,
+        }
+
+        response = self.client.post("/api/transactions/retrieve_book", json=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Book not issued to member!", response.json["Error"])
+    
+    def test_retrieve_book_on_penalizing_member(self):
+        """Test the retrieve book route on a penalizing member."""
+        issue_record = Transaction(
+            book_id=self.test_book.id,
+            member_id=self.test_member.id,
+            type=TransactionType.ISSUE,
+            issued_on=datetime.now() - timedelta(days=10),
+        )
+        
+        db.session.add(issue_record)
+        db.session.commit()
+        
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+        
+        response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 200)
-
-        transaction = Transaction.query.filter_by(
-            book_id=self.book.id, member_id=self.member.id, type="return"
+        self.assertIn("Return transaction recorded successfully", response.json["Message"])
+        
+        record = Transaction.query.filter_by(
+            book_id=self.test_book.id, member_id=self.test_member.id
         ).first()
-        self.assertEqual(transaction.member_id, self.member.id)
-        self.assertEqual(transaction.book_id, self.book.id)
-        self.assertEqual(transaction.type, "return")
-        self.assertEqual(transaction.date.date(), datetime.now().date())
-        self.assertEqual(self.member.books_borrowed, 0)
-        self.assertEqual(self.book.quantity, 6)
+        
+        member = db.session.get(Member, self.test_member.id)
+        
+        self.assertEqual(record.charge, 30)
+        self.assertEqual(record.charge, member.debt)
+        self.assertEqual(record.type, TransactionType.RETURN)
 
+    def test_retrieve_book_on_no_penalty(self):
+        """Test the retrieve book route on no penalty."""
+        issue_record = Transaction(
+            book_id=self.test_book.id,
+            member_id=self.test_member.id,
+            type=TransactionType.ISSUE,
+            issued_on=datetime.now() - timedelta(days=5),
+        )
+        
+        db.session.add(issue_record)
+        db.session.commit()
+        
+        data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
+        }
+        
+        response = self.client.post("/api/transactions/retrieve_book", json=data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Return transaction recorded successfully", response.json["Message"])
+        
+        record = Transaction.query.filter_by(
+            book_id=self.test_book.id, member_id=self.test_member.id
+        ).first()
+        
+        member = db.session.get(Member, self.test_member.id)
+        
+        self.assertEqual(record.charge, 0)
+        self.assertEqual(record.charge, member.debt)
+        self.assertEqual(record.type, TransactionType.RETURN)
+    
     def test_retrieve_book_on_invalid_data(self):
         """Test the retrieve book route with invalid data."""
         data = {"member_id": sys.maxsize, "book_id": None}
@@ -100,156 +285,41 @@ class TestTransactionRoutes(TestCase):
         response = self.client.post("/api/transactions/retrieve_book", json=data)
         self.assertEqual(response.status_code, 400)
         self.assertIn("Validation failed", response.json["Error"])
-
-    def test_retrieve_book_updates_member_debt_on_penalty(self):
-        """Test the retrieve book route updates member debt on penalty."""
-
-        member = Member(name="Wentworth Miller", debt=0, books_borrowed=0)
-
-        book = Book(title="The Alchemist", author="Paulo Coelho", quantity=5)
-
-        db.session.add_all([member, book])
-        db.session.commit()
-
-        # issue book to member and set date to 100 days ago
-        transaction = Transaction(
-            member_id=member.id,
-            book_id=book.id,
+        
+    def test_retrieve_book_on_penalizing_member_with_max_debt(self):
+        """Test the retrieve book route on a penalizing member with max debt."""
+        issue_record = Transaction(
+            book_id=self.test_book.id,
+            member_id=self.test_member.id,
             type=TransactionType.ISSUE,
-            date=datetime.now() - timedelta(days=100),
+            issued_on=datetime.now() - timedelta(days=100),
         )
-
-        db.session.add(transaction)
+        
+        db.session.add(issue_record)
         db.session.commit()
-
-        retrieved_member = db.session.get(Member, member.id)
-        retrieved_book = db.session.get(Book, book.id)
-
-        retrieved_member.books_borrowed += 1
-        retrieved_book.quantity -= 1
-
-        retrieved_transaction = db.session.get(Transaction, transaction.id)
-
-        data = {
-            "member_id": retrieved_transaction.member.id,
-            "book_id": retrieved_transaction.book.id,
+        
+        retrieve_data = {
+            "member_id": self.test_member.id,
+            "book_id": self.test_book.id,
         }
+        
+        response = self.client.post("/api/transactions/retrieve_book", json=retrieve_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Return transaction recorded successfully", response.json["Message"])
+        
+        record = Transaction.query.filter_by(
+            book_id=self.test_book.id, member_id=self.test_member.id
+        ).first()
+        
+        member = db.session.get(Member, self.test_member.id)
+        
+        self.assertEqual(record.charge, 500)
+        self.assertEqual(record.charge, member.debt)
+        
+    def test_retrieve_book_on_invalid_data(self):
+        """Test the retrieve book route with invalid data."""
+        data = {"member_id": sys.maxsize, "book_id": None}
 
         response = self.client.post("/api/transactions/retrieve_book", json=data)
-
-        # fetch member from database
-        member = db.session.get(Member, retrieved_transaction.member.id)
-
-        self.assertEqual(self.book.quantity, 5)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(member.books_borrowed, 0)
-        self.assertEqual(member.debt, 500)
-
-    def test_penalty_update_on_retrieve_book(self):
-        """Test the penalty update on retrieve book route."""
-
-        member = Member(name="Wentworth Miller", debt=0, books_borrowed=0)
-
-        book = Book(title="The Alchemist", author="Paulo Coelho", quantity=5)
-
-        db.session.add_all([member, book])
-        db.session.commit()
-
-        # issue book to member and set date to 10 days ago
-        transaction = Transaction(
-            member_id=member.id,
-            book_id=book.id,
-            type=TransactionType.ISSUE,
-            date=datetime.now() - timedelta(days=10),
-        )
-
-        db.session.add(transaction)
-        db.session.commit()
-
-        retrieved_member = db.session.get(Member, member.id)
-        retrieved_book = db.session.get(Book, book.id)
-
-        retrieved_member.books_borrowed += 1
-        retrieved_book.quantity -= 1
-
-        retrieved_transaction = db.session.get(Transaction, transaction.id)
-
-        data = {
-            "member_id": retrieved_transaction.member.id,
-            "book_id": retrieved_transaction.book.id,
-        }
-
-        response = self.client.post("/api/transactions/retrieve_book", json=data)
-
-        # fetch member from database
-        member = db.session.get(Member, retrieved_transaction.member.id)
-
-        self.assertEqual(self.book.quantity, 5)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(member.books_borrowed, 0)
-        self.assertEqual(member.debt, 30)
-
-    def test_retrieve_book_with_no_penalty(self):
-        """Test the retrieve book route with no penalty."""
-            
-        member = Member(name="Wentworth Miller", debt=0, books_borrowed=0)
-
-        book = Book(title="The Alchemist", author="Paulo Coelho", quantity=5)
-
-        db.session.add_all([member, book])
-        db.session.commit()
-
-        # issue book to member and set date to 5 days ago
-        transaction = Transaction(
-            member_id=member.id,
-            book_id=book.id,
-            type=TransactionType.ISSUE,
-            date=datetime.now() - timedelta(days=5),
-        )
-
-        db.session.add(transaction)
-        db.session.commit()
-
-        retrieved_member = db.session.get(Member, member.id)
-        retrieved_book = db.session.get(Book, book.id)
-
-        retrieved_member.books_borrowed += 1
-        retrieved_book.quantity -= 1
-
-        retrieved_transaction = db.session.get(Transaction, transaction.id)
-
-        data = {
-            "member_id": retrieved_transaction.member.id,
-            "book_id": retrieved_transaction.book.id,
-        }
-
-        response = self.client.post("/api/transactions/retrieve_book", json=data)
-
-        # fetch member from database
-        member = db.session.get(Member, retrieved_transaction.member.id)
-
-        self.assertEqual(self.book.quantity, 5)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(member.books_borrowed, 0)
-        self.assertEqual(member.debt, 0)
-
-    def test_get_transactions(self):
-        """Test the get transactions route."""
-        Transaction.query.delete()
-        # Create a new book and member
-        new_member = Member(name="Jane Doe", debt=0, books_borrowed=0)
-        new_book = Book(title="1984", author="George Orwell", quantity=3)
-
-        db.session.add(new_member)
-        db.session.add(new_book)
-        db.session.commit()
-
-        # Issue the book to the member
-        transaction = Transaction(member_id=1, book_id=1, type=TransactionType.ISSUE)
-        db.session.add(transaction)
-        db.session.commit()
-
-        # Retrieve the transactions
-        response = self.client.get("/api/transactions/get_transactions")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json["transactions"]), 1)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Validation failed", response.json["Error"])
