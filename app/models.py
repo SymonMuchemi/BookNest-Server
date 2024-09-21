@@ -10,7 +10,9 @@ class Book(db.Model):
     penalty_fee = db.Column(db.Integer, default=10)
     quantity = db.Column(db.Integer, nullable=False)
 
-    transactions = db.relationship("Transaction", backref="book")
+    transactions = db.relationship(
+        "Transaction", backref="book", cascade="all, delete-orphan"
+    )
 
 
 class Member(db.Model):
@@ -20,7 +22,9 @@ class Member(db.Model):
     debt = db.Column(db.Integer, default=0)
     books_borrowed = db.Column(db.Integer, default=0)
 
-    transactions = db.relationship("Transaction", backref="member")
+    transactions = db.relationship(
+        "Transaction", backref="member", cascade="all, delete-orphan"
+    )
 
 
 class Transaction(db.Model):
