@@ -9,7 +9,7 @@ errorlog = "/var/log/gunicorn/error.log"
 loglevel = "info"
 
 # Worker options
-worker_class = "gevent"
+worker_class = "sync"
 worker_connections = 1000
 timeout = 30
 keepalive = 2
