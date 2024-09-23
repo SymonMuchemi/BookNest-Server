@@ -138,7 +138,12 @@ def get_members():
     total_pages = ceil(members.total / per_page)
 
     members_list = [
-        {"id": member.id, "name": member.name, "debt": member.debt}
+        {
+            "id": member.id,
+            "name": member.name,
+            "debt": member.debt,
+            "books_borrowed": member.books_borrowed,
+        }
         for member in members
     ]
 
