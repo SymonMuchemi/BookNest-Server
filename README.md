@@ -94,11 +94,11 @@ python -m unittest discover tests
 
 ## Features
 
-[x] Librarians can add, update, delete and view books in the library
-[x] Librarians can add, update, delete and view members in the library
-[x] Librarians can issue books to members
-[x] Librarians can retrieve books from members
-[x] Librarians can view all transactions made
+- [x] Librarians can add, update, delete and view books in the library
+- [x] Librarians can add, update, delete and view members in the library
+- [x] Librarians can issue books to members
+- [x] Librarians can retrieve books from members
+- [x] Librarians can view all transactions made
 
 ## API Endpoints
 
