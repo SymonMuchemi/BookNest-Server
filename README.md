@@ -94,11 +94,13 @@ python -m unittest discover tests
 
 ## Features
 
-- [x] Librarians can add, update, delete and view books in the library
-- [x] Librarians can add, update, delete and view members in the library
-- [x] Librarians can issue books to members
-- [x] Librarians can retrieve books from members
-- [x] Librarians can view all transactions made
+- [x] Librarian can add, update, delete and view books in the library
+- [x] Librarian can add, update, delete and view members in the library
+- [x] Librarian can issue books to members
+- [x] Librarian can retrieve books from members
+- [x] Librarian can view all transactions made
+- [x] Member's debt increments after borrow period exceeds set borrow period (7 Days)
+- [x] Member's debt and transaction charge is capped at 500.
 
 ## API Endpoints
 
