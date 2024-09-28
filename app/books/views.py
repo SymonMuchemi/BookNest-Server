@@ -180,7 +180,6 @@ def update_book(book_id):
     """
     book_data = request.json
 
-    # book = Book.query.get(book_id)
     book = db.session.get(Book, book_id)
 
     if book is None:
