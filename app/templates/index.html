@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookNest API Documentation</title>
+  </head>
+  <body>
+    <h1>BookNest API Documentation</h1>
+
+    <h2>Books</h2>
+    <ul>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint">/api/get_books</code
+        ><span class="description">Get all books</span>
+      </li>
+      <li>
+        <code class="method">POST</code>
+        <code class="endpoint">/api/books/create</code
+        ><span class="description">Create a new book</span>
+      </li>
+      <li>
+        <code class="method">PUT</code>
+        <code class="endpoint">/api/books/update/&lt;int:book_id&gt;</code
+        ><span class="description">Update a book</span>
+      </li>
+      <li>
+        <code class="method">DELETE</code>
+        <code class="endpoint">/api/books/delete/&lt;int:book_id&gt;</code
+        ><span class="description">Delete a book</span>
+      </li>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint">/api/books/get_by_id/&lt;int:book_id&gt;</code
+        ><span class="description">Get a book by id</span>
+      </li>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint"
+          >/api/books/get_by_title/&lt;string:book_title&gt;</code
+        ><span class="description">Get a book by title</span>
+      </li>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint"
+          >/api/books/get_by_author/&lt;string:book_author&gt;</code
+        ><span class="description">Get a book by author</span>
+      </li>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint">/api/books/hello</code
+        ><span class="description">Test endpoint</span>
+      </li>
+    </ul>
+
+    <h2>Members</h2>
+    <ul>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint">/api/members/get_members</code
+        ><span class="description">Get all members</span>
+      </li>
+      <li>
+        <code class="method">POST</code>
+        <code class="endpoint">/api/members/create</code
+        ><span class="description">Create a new member</span>
+      </li>
+      <li>
+        <code class="method">PUT</code>
+        <code class="endpoint">/api/members/update/&lt;int:member_id&gt;</code
+        ><span class="description">Update a member</span>
+      </li>
+      <li>
+        <code class="method">DELETE</code>
+        <code class="endpoint">/api/members/delete/&lt;int:member_id&gt;</code
+        ><span class="description">Delete a member</span>
+      </li>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint"
+          >/api/members/get_by_id/&lt;int:member_id&gt;</code
+        ><span class="description">Get a member by id</span>
+      </li>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint">/api/members/hello</code
+        ><span class="description">Test endpoint</span>
+      </li>
+    </ul>
+
+    <h2>Transactions</h2>
+    <ul>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint">/api/transactions/get_transactions</code
+        ><span class="description">Get all transactions</span>
+      </li>
+      <li>
+        <code class="method">POST</code>
+        <code class="endpoint">/api/transactions/issue_book</code
+        ><span class="description">Issue a book to a member</span>
+      </li>
+      <li>
+        <code class="method">POST</code>
+        <code class="endpoint">/api/transactions/retrieve_book</code
+        ><span class="description">Retrieve a book from a member</span>
+      </li>
+      <li>
+        <code class="method">GET</code>
+        <code class="endpoint">/api/transactions/hello</code
+        ><span class="description">Test endpoint</span>
+      </li>
+    </ul>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1,
+      h2 {
+        color: #2c3e50;
+      }
+      h2 {
+        border-bottom: 2px solid #ecf0f1;
+        padding-bottom: 10px;
+      }
+      ul {
+        padding-left: 20px;
+      }
+      li {
+        margin-bottom: 10px;
+      }
+      code {
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 2px 5px;
+        font-family: monospace;
+      }
+      .method {
+        font-weight: bold;
+        color: #2980b9;
+      }
+      .endpoint {
+        color: #27ae60;
+      }
+      .description {
+        margin-left: 20px;
+        color: #7f8c8d;
+      }
+    </style>
+  </body>
+</html>
