@@ -11,7 +11,7 @@ migrate = Migrate()
 cors = CORS()
 
 
-def create_app(key='default'):
+def create_app(key="default"):
     """Create and configures the Flask application.
 
     Args:
@@ -29,12 +29,14 @@ def create_app(key='default'):
     migrate.init_app(app, db)
     cors.init_app(app)
 
+    from .main import main_bp
     from .books import books_bp
     from .members import members_bp
     from .transactions import transactions_bp
 
-    app.register_blueprint(books_bp, url_prefix='/api/books')
-    app.register_blueprint(members_bp, url_prefix='/api/members')
-    app.register_blueprint(transactions_bp, url_prefix='/api/transactions')
+    app.register_blueprint(main_bp, url_prefix="/")
+    app.register_blueprint(books_bp, url_prefix="/api/books")
+    app.register_blueprint(members_bp, url_prefix="/api/members")
+    app.register_blueprint(transactions_bp, url_prefix="/api/transactions")
 
     return app
