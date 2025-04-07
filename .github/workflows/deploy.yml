@@ -39,6 +39,13 @@ jobs:
           fi
           source venv/bin/activate
           pip install -r requirements.txt
+      
+      - name: Run database migrations
+        run: |
+          cd $DEPLOY_PATH
+          source venv/bin/activate
+          flask db upgrade
+          flask db migrate
 
       - name: Restart Gunicorn
         run: sudo systemctl start flaskapp
