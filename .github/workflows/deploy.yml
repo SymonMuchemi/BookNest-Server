@@ -1,0 +1,42 @@
+name: Deploy Flask App to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    env:
+        DEPLOY_PATH: "/home/ubuntu/BookNest-Server"
+        FLASK_ENV: production
+        GH_PAT: ${{ secrets.GH_PAT }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+    
+      - name: Ensure Repository Exists
+        run: |
+            if [ ! -d "$DEPLOY_PATH" ]; then
+                git clone https://x-access-token:${GH_PAT}@github.com/SymonMuchemi/BookNest-Server.git $DEPLOY_PATH
+            fi
+
+      - name: Stop Gunicorn
+        run: sudo systemctl stop flaskapp
+
+      - name: Copy files to app directory
+        run: |
+          rsync -av --exclude='.git*' ./ $DEPLOY_PATH/
+
+      - name: Install dependencies
+        run: |
+          cd $DEPLOY_PATH
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Restart Gunicorn
+        run: sudo systemctl start flaskapp
