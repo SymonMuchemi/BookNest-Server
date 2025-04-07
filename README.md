@@ -1,5 +1,5 @@
 # BookNest Server
-This project has been deployed on AWS and can be accessed via the following link: [BookNest Server](https://booknest.api.symonmuchemi.tech/)
+This project has been deployed on AWS and can be accessed via the following link: [BookNest Server](https://booknest-api.symonmuchemi.com/)
 
 ## Table of Contents
 
