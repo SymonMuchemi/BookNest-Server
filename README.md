@@ -15,7 +15,6 @@ This project has been deployed on AWS and can be accessed via the following link
     - [Books](#books)
     - [Members](#members)
     - [Transactions](#transactions)
-  - [Click the button below to run in Postman](#click-the-button-below-to-run-in-postman)
   - [Database Design](#database-design)
   - [Author](#author)
 
@@ -131,10 +130,6 @@ python -m unittest discover tests
 - `POST /api/transactions/issue_book`: Issue a book to a member.
 - `POST /api/transactions/retrieve_book`: Retrieve a book from a member.
 - `GET /api/transactions/hello`: Test endpoint.
-  
-## Click the button below to run in Postman
-
-[<img src="https://run.pstmn.io/button.svg" alt="Run In Postman" style="width: 128px; height: 32px;">](https://app.getpostman.com/run-collection/33408943-117ac1d7-306b-490d-8068-a86c042d232a?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D33408943-117ac1d7-306b-490d-8068-a86c042d232a%26entityType%3Dcollection%26workspaceId%3D38679ba4-8cda-4ce9-a8e1-92fa334c30c6)
 
 ## Database Design
 
