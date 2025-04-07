@@ -13,7 +13,6 @@ jobs:
         DEPLOY_PATH: "/home/ubuntu/BookNest-Server"
         FLASK_ENV: production
         GH_PAT: ${{ secrets.GH_PAT }}
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
       - name: Checkout repo
